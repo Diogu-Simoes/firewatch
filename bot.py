@@ -48,7 +48,6 @@ class BotaoOn(View): #Caso o comando /alerta seja chamado quando a vigiancia est
             else:
                 button.label="Desligado"
                 button.style=discord.ButtonStyle.danger
-                await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"incêndios sem alertar!",url="https://fogos.pt"))
         else:
             vigilancia.start(interaction.guild.id)
             global AlertLastnumIncendio
@@ -57,7 +56,6 @@ class BotaoOn(View): #Caso o comando /alerta seja chamado quando a vigiancia est
             if vigilancia.is_running():
                 button.label="Ligado"
                 button.style=discord.ButtonStyle.success
-                estado.start()
             else:
                 await interaction.channel.send(f"**\nOcorreu um erro ao ativar o modo alerta!**",delete_after=2)
         await interaction.response.edit_message(view=self)
@@ -73,7 +71,6 @@ class BotaoOff(View): #caso esteja desativa mostra este, fazem exatamente o mesm
             else:
                 button.label="Desligado"
                 button.style=discord.ButtonStyle.danger
-                await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"incêndios sem alertar!",url="https://fogos.pt"))
         else:
             vigilancia.start(interaction.guild.id)
             global AlertLastnumIncendio
@@ -82,7 +79,6 @@ class BotaoOff(View): #caso esteja desativa mostra este, fazem exatamente o mesm
             if vigilancia.is_running():
                 button.label="Ligado"
                 button.style=discord.ButtonStyle.success
-                estado.start()
             else:
                 await interaction.channel.send(f"**\nOcorreu um erro ao ativar o modo alerta!**",delete_after=2)
         await interaction.response.edit_message(view=self)
@@ -102,17 +98,18 @@ DataMsg={}
 @client.event
 async def on_ready():
     print(f"\n\nLOGIN: {client.user} [ID: {client.user.id}]\n\n")
-    await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"incêndios sem alertar!",url="https://fogos.pt"))
+    await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"incêndios!",url="https://fogos.pt"))
 
 @client.tree.command(description="Permite configuar o canal do discord onde envio os alertas e o concelho a vigiar!")
-async def alerta(interaction: discord.Interaction):                 # comanndo /alerta
+async def alerta(interaction):                 # comanndo /alerta
+    await interaction.response.defer()
     if not interaction.user.guild_permissions.administrator:
         await interaction.response.send_message("\n**Não te foi atruibuido nenhum cargo com permissão de administrador por isso não podes mudar as configurações do bot!**",ephemeral=True)
         return 1
+    msg=await interaction.followup.send("**\n\t\t\t\t\t\t\t\t\t\t\t\t\t**:tools:")
     global ConcelhoOpcoes
     view=BotaoOff() #botão adpativo referido no ínicio do código, adicionamos como off, se estiver em modo vigilancia será mudado à frente podemos
-    await interaction.response.defer() #já adicionar à view pois é o primeiro elemento do menu, depois de o mostrarmos alteramos a variável
-    text_channel_dic=[]
+    text_channel_dic=[] #já adicionar à view pois é o primeiro elemento do menu, depois de o mostrarmos alteramos a variável
     for channel in interaction.guild.channels:
         if str(channel.type) == 'text':
             if interaction.guild.id in AlertChannel.keys():                 #cria a lista de canais para escolher, verifica
@@ -204,15 +201,15 @@ async def alerta(interaction: discord.Interaction):                 # comanndo /
 
     if interaction.guild.id in AlertDistrito.keys():    #apenas podemos iniciar esta variável se o botão for criado
         selecao_concelho.callback = resposta_concelho   # ou seja, se já tiver sido escolhido um concelho antes
-    msg=await interaction.followup.send("**\n\t\t\t\t\t\t\t\t\t\t\t\t\t**:tools:")
-    await asyncio.sleep(300)
+    await asyncio.sleep(298)
     await msg.delete() #o defer obriga a enviar uma mensagem de followup mas esta é logo apagada
 
 @client.tree.command(description="Mostra todos os incêndios ativos a nível nacional e permite pesquisar por incêndios!")
-async def incendios(interaction: discord.Interaction):
+async def incendios(interaction):
+    await interaction.response.defer()
+    msg=await interaction.followup.send("**\n\t\t\t\t\t\t\t\t\t\t\t\t\t**:fire:")
     global DataMsg
-    DataMsg[interaction.guild.id]=" "
-    await interaction.response.defer()                        #ligeiro código esparguete, não consegui arranjar melhor maneira de permitir
+    DataMsg[interaction.guild.id]=" "                    #ligeiro código esparguete, não consegui arranjar melhor maneira de permitir
     view=View()                                                 #chamar a funcao do comando incendios ao clicar no "procura informacoes no bot"
     distritosEscolha=[]#                                         dentro do alerta sem ser copiando a para aqui dentro como parte do /alerta
     for distrito in distritosConcelhosDic.keys():
@@ -265,7 +262,6 @@ async def incendios(interaction: discord.Interaction):
             await interaction.channel.send("**\nExiste um incêndio ativo em Portugal.**",delete_after=300)
         view.add_item(selecao_distrito)
         await interaction.channel.send("**\nEscolhe um distrito para procurar por incêndios:**",view = view,delete_after=300)
-    msg=await interaction.followup.send("**\n\t\t\t\t\t\t\t\t\t\t\t\t\t**:fire:")
     await asyncio.sleep(300)
     await msg.delete()
 
@@ -281,7 +277,6 @@ async def vigilancia(server_id): #loop do alerta
     if server_id not in AlertConcelho.keys():
         print("\n\nMODO ALERTA: CONCELHO PARA OS ALERTAS AINDA POR DEFINIR.")
         return -1
-    await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"{AlertConcelho[server_id]}! #{AlertChannel[server_id]}",url="https://fogos.pt"))
     InfoButton=Button(label="Procurar mais informação no bot!",style=discord.ButtonStyle.success,emoji="🔎")
     WebsiteButton=Button(label="Saber mais em fogos.pt",url="https://fogos.pt")
     async def resposta_info(interaction):
@@ -368,16 +363,9 @@ async def vigilancia(server_id): #loop do alerta
         view.remove_item(InfoButton)
         view.remove_item(WebsiteButton)
     except:
-        await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"{AlertConcelho[server_id]}! CANAL INVÁLIDO",url="https://fogos.pt"))
         vigilancia.cancel()
         return 2
     AlertLastRead[server_id]=AlertnumIncendios[server_id]
-
-@tasks.loop(seconds=300)
-async def estado():
-    if not vigilancia.is_running():
-        await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"incêndios sem alertar!",url="https://fogos.pt"))
-
 
 async def formatedData(dados,local): #recebe os dados da API e formata-os o /incendios, o param local é apenas para 2 mensagens estéticas
     final=""
