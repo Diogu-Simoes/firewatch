@@ -269,7 +269,7 @@ async def incendios(interaction: discord.Interaction):
     await asyncio.sleep(300)
     await msg.delete()
 
-@tasks.loop(seconds=5)
+@tasks.loop(seconds=150)
 async def vigilancia(server_id): #loop do alerta
     if server_id not in AlertChannel.keys():
         if server_id not in AlertConcelho.keys():
