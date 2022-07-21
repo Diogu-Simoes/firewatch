@@ -1,6 +1,6 @@
 import discord #versão dev, instalada pelo uso do link/clone do github e não pelo pip install discord diretamente
 from discord import app_commands #(à data deste commit o "pip install discord" ainda não está atualizado para a ultima versão)
-from discord.ui import Select,View
+from discord.ui import Button,Select,View
 from discord.ext import tasks
 import os
 import asyncio
