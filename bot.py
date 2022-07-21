@@ -97,24 +97,26 @@ DataMsg=" "
 
 @client.event
 async def on_ready():
-    print(f"\n\nLogado com o nome {client.user} [ID: {client.user.id}]\n\n")
+    print(f"\n\nLogado como {client.user} [ID: {client.user.id}]\n\n")
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"incêndios!",url="https://fogos.pt"))
 
-@client.tree.command()
+@client.tree.command(description="Permite configuar o canal do discord onde envio os alertas e o concelho a vigiar!")
 async def alerta(interaction: discord.Interaction):                 # comanndo /alerta
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message("**Não tens nenhum cargo com permissão de administrador por isso não podes mudar as configurações do bot!**",ephemeral=True)
+        return 1
     global ConcelhoOpcoes
     view=BotaoOff() #botão adpativo referido no ínicio do código, adicionamos como off, se estiver em modo vigilancia será mudado à frente podemos
     await interaction.response.defer() #já adicionar à view pois é o primeiro elemento do menu, depois de o mostrarmos alteramos a variável
     text_channel_dic=[]
+    count=1 # Nº do canal antes do nome para evitar exception de terem o mesmo nome
     for channel in interaction.guild.channels:
         if str(channel.type) == 'text':
             if interaction.guild.id in AlertChannel.keys():                 #cria a lista de canais para escolher, verifica
-                if AlertChannel[interaction.guild.id]==channel.id:      #se já foi escolhido antes para mostrar esse como default
-                    text_channel_dic.append(discord.SelectOption(label=channel.name,emoji="#️⃣",description="id: "+str(channel.id),default=True))
-                else:
-                    text_channel_dic.append(discord.SelectOption(label=channel.name,emoji="#️⃣",description="id: "+str(channel.id)))
-            else:
-                text_channel_dic.append(discord.SelectOption(label=channel.name,emoji="#️⃣",description="id: "+str(channel.id)))
+                if AlertChannel[interaction.guild.id]==channel:      #se já foi escolhido antes para mostrar esse como default
+                    text_channel_dic.append(discord.SelectOption(label=str(count)+": "+channel.name,emoji="#️⃣",description="id: "+str(channel.id),default=True))
+            text_channel_dic.append(discord.SelectOption(label=str(count)+": "+channel.name,emoji="#️⃣",description="id: "+str(channel.id)))
+            count+=1
     selecao_canal=Select(options=text_channel_dic,placeholder="Clique para selecionar o canal!")
     distritosEscolha=[]
     for distrito in distritosConcelhosDic.keys():
@@ -131,7 +133,7 @@ async def alerta(interaction: discord.Interaction):                 # comanndo /
         await interaction.response.defer(thinking=False)
         global AlertChannel
         for channel in interaction.guild.channels:
-            if str(channel.type) == 'text' and channel.name==selecao_canal.values[0]:
+            if str(channel.type) == 'text' and channel.name==selecao_canal.values[0].split(": ")[1]:
                 AlertChannel[interaction.guild.id]=channel #guarda associado ao id do server no dicionario
         await interaction.channel.send(f"**\nCanal atualizado com sucesso!**",delete_after=1)
 
@@ -197,13 +199,12 @@ async def alerta(interaction: discord.Interaction):                 # comanndo /
 
     if interaction.guild.id in AlertDistrito.keys():    #apenas podemos iniciar esta variável se o botão for criado
         selecao_concelho.callback = resposta_concelho   # ou seja, se já tiver sido escolhido um concelho antes
-    msg=await interaction.followup.send("**\n\t\t\t\t\t\t\t\t\t\t\t\t\t**:tools:")
-    await asyncio.sleep(300) #metodo rudimentar para fazer delete_after=300 a uma interaction.followup
-    await msg.delete()
+    msg=await interaction.followup.send("**⠀**")
+    await msg.delete() #o defer obriga a enviar uma mensagem de followup mas esta é logo apagada
 
-async def incendios(interaction: discord.Interaction):          # comanndo /incêndios
-    await interaction.response.defer()
-    view=View()
+async def incendios(interaction: discord.Interaction):          # ligeiro código esparguete, não consegui arranjar melhor maneira de permitir
+    await interaction.response.defer()                        #chamar a funcao do comando incendios ao clicar no "procura informacoes no bot"
+    view=View()                                                     #dentro do alerta sem ser copiando a para aqui dentro como parte do /alerta
     distritosEscolha=[]
     for distrito in distritosConcelhosDic.keys():                                       #cria o dropdown de distritos
         distritosEscolha.append(discord.SelectOption(label=distrito,emoji="🌍"))
@@ -255,8 +256,7 @@ async def incendios(interaction: discord.Interaction):          # comanndo /inc�
             await interaction.channel.send("**\nExiste um incêndio ativo em Portugal.**",delete_after=300)
         view.add_item(selecao_distrito)
         await interaction.channel.send("**\nEscolhe um distrito para procurar por incêndios:**",view = view,delete_after=300)
-    msg=await interaction.followup.send("**\n\t\t\t\t\t\t\t\t\t\t\t\t\t**:fire:")
-    await asyncio.sleep(300)
+    msg=await interaction.followup.send("**⠀**")
     await msg.delete()
 
 @tasks.loop(seconds=5)
@@ -269,23 +269,38 @@ async def vigilancia(server_id): #loop do alerta
             print("\n\nCanal para os alertas ainda por definir.")
             return 1
     if server_id not in AlertConcelho.keys():
-        print("\n\nConselho para os alertas ainda por definir.")
+        print("\n\nConcelho para os alertas ainda por definir.")
         return -1
+    InfoButton=Button(label="Procurar mais informação no bot!",style=discord.ButtonStyle.success,emoji="🔎")
+    WebsiteButton=Button(label="Saber mais em fogos.pt",url="https://fogos.pt")
+    async def resposta_info(interaction):
+        await incendios(interaction)
+    InfoButton.callback=resposta_info
+    view=View()
+    view.add_item(InfoButton)
+    view.add_item(WebsiteButton)
     global AlertLastRead
     global AlertnumIncendios
     dados=(requests.get(URL,{"concelho":AlertConcelho[server_id]})).json()
     AlertnumIncendios[server_id]=len(dados['data'])
-    if AlertnumIncendios[server_id]>AlertLastRead[server_id]:
-        await AlertChannel[server_id].send(f"**\n\n\t\t\t\t\t\t\t\t\t\t\t❗ ALERTA ❗\n\nAUMENTO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}**",delete_after=3600)
-        await AlertChannel[server_id].send(await formatedData(dados,AlertConcelho[server_id]),delete_after=3600)
-    elif AlertnumIncendios[server_id]<AlertLastRead[server_id]:
-        await AlertChannel[server_id].send(f"**\n\n\t\t\t\t\t\t\t\t\t\t\t❕ NOVO DESENVOLVIMENTO ❕\n\nDIMINUIÇÃO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}**") #delete_after=3600
+    if AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertnumIncendios[server_id]==1:
+        await AlertChannel[server_id].send(f"""**\n\t\t\t\t\t\t\t\t\t\t\t❗ ALERTA ❗
+        \n\t\t\t\t\tSURGIU UM INCÊNDIO EM {AlertConcelho[server_id].upper()}!
+        \n\t\t\t\t\t\t\t\t\t\t\t  @everyone\n\n**""",view=view,delete_after=3600)
+    if AlertnumIncendios[server_id]>AlertLastRead[server_id]:     # numero de incêndios subiu em relação ao último check
+        await AlertChannel[server_id].send(f"""**\n\t\t\t\t\t\t\t\t\t\t\t❗ ALERTA ❗
+        \nAUMENTO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}
+        \n\t\t\t\t\t\t\t\t\t\t\t  @everyone\n\n**""",view=view,delete_after=3600)
+    elif AlertnumIncendios[server_id]<AlertLastRead[server_id]: # numero de incêndios desceu em relação ao último check
+        await AlertChannel[server_id].send(f"**\n\t\t\t\t\t\t\t\t❕ NOVO DESENVOLVIMENTO ❕**",delete_after=3600)
         if AlertnumIncendios[server_id]==0:
-            await AlertChannel[server_id].send(f"**\n\nNão existe agora nenhum incêndio oficialmente ativo. {AlertConcelho[server_id].upper()}!**") #delete_after=3600
+            await AlertChannel[server_id].send(f"**\n\nJÁ NÃO EXISTE NENHUM INCÊNDIO OFICIALMENTE ATIVO!**",delete_after=3600) #delete_after=3600
         else:
-            await AlertChannel[server_id].send(await formatedData(dados,AlertConcelho[server_id])) #delete_after=3600
+            await AlertChannel[server_id].send(f"**\n\nDIMINUIÇÃO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()})\n\n**",view=view,delete_after=3600)
     else:
         print("\n\nNão houve desenvolvimentos.")
+    view.remove_item(InfoButton)
+    view.remove_item(WebsiteButton)
     AlertLastRead[server_id]=AlertnumIncendios[server_id]
 
 
