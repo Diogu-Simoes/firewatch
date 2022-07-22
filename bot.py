@@ -54,7 +54,7 @@ class BotaoOn(View): #Caso o comando /alerta seja chamado quando a vigiancia est
             AlertLastRead[interaction.guild.id]=0
             await asyncio.sleep(1)
             if vigilancia.is_running():
-                button.label="Ligado"
+                button.label=f"Ligado -> {AlertConcelho[interaction.guild.id]} #{AlertChannel[interaction.guild.id]}"
                 button.style=discord.ButtonStyle.success
             else:
                 await interaction.channel.send(f"**\nOcorreu um erro ao ativar o modo alerta!**",delete_after=2)
@@ -77,7 +77,7 @@ class BotaoOff(View): #caso esteja desativa mostra este, fazem exatamente o mesm
             AlertLastRead[interaction.guild.id]=0
             await asyncio.sleep(1)
             if vigilancia.is_running():
-                button.label="Ligado"
+                button.label=f"Ligado -> {AlertConcelho[interaction.guild.id]} #{AlertChannel[interaction.guild.id]}"
                 button.style=discord.ButtonStyle.success
             else:
                 await interaction.channel.send(f"**\nOcorreu um erro ao ativar o modo alerta!**",delete_after=2)
@@ -105,7 +105,7 @@ async def alerta(interaction):                 # comanndo /alerta
     if not interaction.user.guild_permissions.administrator:
         await interaction.response.send_message("\n**Não te foi atruibuido nenhum cargo com permissão de administrador por isso não podes mudar as configurações do bot!**",ephemeral=True)
         return 1
-    await interaction.response.send_message("**\n\t\t\t\t\t\t\t\t\t\t\t\t\t**:tools:")
+    await interaction.response.send_message("**\n\t\t\t\t\t\t\t\t\t\t\t\t\t**:tools:",delete_after=300)
     global ConcelhoOpcoes
     view=BotaoOff() #botão adpativo referido no ínicio do código, adicionamos como off, se estiver em modo vigilancia será mudado à frente podemos
     text_channel_dic=[] #já adicionar à view pois é o primeiro elemento do menu, depois de o mostrarmos alteramos a variável
@@ -203,7 +203,7 @@ async def alerta(interaction):                 # comanndo /alerta
 
 @client.tree.command(description="Mostra todos os incêndios a nível nacional e permite pesquisar por região!")
 async def incendios(interaction):
-    await interaction.response.send_message("**\n\t\t\t\t\t\t\t\t\t\t\t\t\t**:fire:")
+    await interaction.response.send_message("**\n\t\t\t\t\t\t\t\t\t\t\t\t\t**:fire:",delete_after=300)
     global DataMsg
     DataMsg[interaction.guild.id]=" "                    #ligeiro código esparguete, não consegui arranjar melhor maneira de permitir
     view=View()                                                 #chamar a funcao do comando incendios ao clicar no "procura informacoes no bot"
@@ -338,7 +338,7 @@ async def vigilancia(server_id): #loop do alerta
     AlertnumIncendios[server_id]=0
     dados=(requests.get(URL,{"concelho":AlertConcelho[server_id]})).json()
     for incendio in dados['data']:
-        if incendio["concelho"]==AlertConcelho[server_id] and (incendio["status"]=="Despacho" or incendio["status"]=="Início" or incendio["status"]=="Em Curso" or incendio["status"]=="Despacho de 1º Alerta"):
+        if incendio["concelho"]==AlertConcelho[server_id] and (incendio["status"]=="Despacho" or incendio["status"]=="Início" or incendio["status"]=="Em Curso" or incendio["status"]=="Despacho de 1º Alerta" or incendio["status"]=="Chegada ao TO"):
             AlertnumIncendios[server_id]+=1
     try:
         if AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertnumIncendios[server_id]==1:
