@@ -342,10 +342,10 @@ async def vigilancia(server_id): #loop do alerta
     global AlertLastRead
     global AlertnumIncendios
     AlertnumIncendios[server_id]=0
-    AlertnumIncendios[server_id]+=len((requests.get(URL,{"concelho":AlertConcelho[server_id],"status":"Despacho"})).json())
-    AlertnumIncendios[server_id]+=len((requests.get(URL,{"concelho":AlertConcelho[server_id],"status":"Despacho de 1º Alerta"})).json())
-    AlertnumIncendios[server_id]+=len((requests.get(URL,{"concelho":AlertConcelho[server_id],"status":"Em curso"})).json())
-    AlertnumIncendios[server_id]+=len((requests.get(URL,{"concelho":AlertConcelho[server_id],"status":"Início"})).json())
+    dados=(requests.get(URL,{"concelho":AlertConcelho[server_id],"status":"Despacho"})).json()
+    for incendio in dados['data']:
+        if incendio["conselho"]==AlertConcelho[server_id] and (incendio["status"]=="Despacho" or incendio["status"]=="Início" or incendio["status"]=="Em Curso" or incendio["status"]=="Despacho de 1º Alerta"):
+            AlertnumIncendios[server_id]+=1
     try:
         if AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertnumIncendios[server_id]==1:
             await AlertChannel[server_id].send(f"""**\n\t\t\t\t\t\t\t\t\t\t\t❗ ALERTA ❗
