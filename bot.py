@@ -341,12 +341,11 @@ async def vigilancia(server_id): #loop do alerta
     view.add_item(WebsiteButton)
     global AlertLastRead
     global AlertnumIncendios
-    num=0
-    num+=len((requests.get(URL,{"concelho":AlertConcelho[server_id],"status":"Despacho"})).json())
-    num+=len((requests.get(URL,{"concelho":AlertConcelho[server_id],"status":"Despacho de 1º Alerta"})).json())
-    num+=len((requests.get(URL,{"concelho":AlertConcelho[server_id],"status":"Em curso"})).json())
-    num+=len((requests.get(URL,{"concelho":AlertConcelho[server_id],"status":"Início"})).json())
-    AlertnumIncendios[server_id]=num
+    AlertnumIncendios[server_id]=0
+    AlertnumIncendios[server_id]+=len((requests.get(URL,{"concelho":AlertConcelho[server_id],"status":"Despacho"})).json())
+    AlertnumIncendios[server_id]+=len((requests.get(URL,{"concelho":AlertConcelho[server_id],"status":"Despacho de 1º Alerta"})).json())
+    AlertnumIncendios[server_id]+=len((requests.get(URL,{"concelho":AlertConcelho[server_id],"status":"Em curso"})).json())
+    AlertnumIncendios[server_id]+=len((requests.get(URL,{"concelho":AlertConcelho[server_id],"status":"Início"})).json())
     try:
         if AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertnumIncendios[server_id]==1:
             await AlertChannel[server_id].send(f"""**\n\t\t\t\t\t\t\t\t\t\t\t❗ ALERTA ❗
