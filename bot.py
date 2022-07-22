@@ -102,11 +102,10 @@ async def on_ready():
 
 @client.tree.command(description="Permite configuar o canal do discord onde envio os alertas e o concelho a vigiar!")
 async def alerta(interaction):                 # comanndo /alerta
-    await interaction.response.defer()
     if not interaction.user.guild_permissions.administrator:
         await interaction.response.send_message("\n**Não te foi atruibuido nenhum cargo com permissão de administrador por isso não podes mudar as configurações do bot!**",ephemeral=True)
         return 1
-    msg=await interaction.followup.send("**\n\t\t\t\t\t\t\t\t\t\t\t\t\t**:tools:")
+    await interaction.response.send_message("**\n\t\t\t\t\t\t\t\t\t\t\t\t\t**:tools:")
     global ConcelhoOpcoes
     view=BotaoOff() #botão adpativo referido no ínicio do código, adicionamos como off, se estiver em modo vigilancia será mudado à frente podemos
     text_channel_dic=[] #já adicionar à view pois é o primeiro elemento do menu, depois de o mostrarmos alteramos a variável
@@ -201,13 +200,10 @@ async def alerta(interaction):                 # comanndo /alerta
 
     if interaction.guild.id in AlertDistrito.keys():    #apenas podemos iniciar esta variável se o botão for criado
         selecao_concelho.callback = resposta_concelho   # ou seja, se já tiver sido escolhido um concelho antes
-    await asyncio.sleep(298)
-    await msg.delete() #o defer obriga a enviar uma mensagem de followup mas esta é logo apagada
 
 @client.tree.command(description="Mostra todos os incêndios a nível nacional e permite pesquisar por região!")
 async def incendios(interaction):
-    await interaction.response.defer()
-    msg=await interaction.followup.send("**\n\t\t\t\t\t\t\t\t\t\t\t\t\t**:fire:")
+    await interaction.response.send_message("**\n\t\t\t\t\t\t\t\t\t\t\t\t\t**:fire:")
     global DataMsg
     DataMsg[interaction.guild.id]=" "                    #ligeiro código esparguete, não consegui arranjar melhor maneira de permitir
     view=View()                                                 #chamar a funcao do comando incendios ao clicar no "procura informacoes no bot"
@@ -262,8 +258,6 @@ async def incendios(interaction):
             await interaction.channel.send("**\nExiste um incêndio em Portugal.**",delete_after=300)
         view.add_item(selecao_distrito)
         await interaction.channel.send("**\nEscolhe um distrito para procurar por incêndios:**",view = view,delete_after=300)
-    await asyncio.sleep(300)
-    await msg.delete()
 
 @tasks.loop(seconds=150)
 async def vigilancia(server_id): #loop do alerta
@@ -350,18 +344,18 @@ async def vigilancia(server_id): #loop do alerta
         if AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertnumIncendios[server_id]==1:
             await AlertChannel[server_id].send(f"""**\n\t\t\t\t\t\t\t\t\t\t\t❗ ALERTA ❗
             \n\t\t\t\t\tSURGIU UM INCÊNDIO EM {AlertConcelho[server_id].upper()}!
-            \n\t\t\t\t\t\t\t\t\t\t\t  @everyone\n\n**""",view=view,delete_after=10000)
+            \n\t\t\t\t\t\t\t\t\t\t\t  @everyone\n\n**""",view=view,delete_after=800)
         elif AlertnumIncendios[server_id]>AlertLastRead[server_id]:     # numero de incêndios subiu em relação ao último check
             await AlertChannel[server_id].send(f"""**\n\t\t\t\t\t\t\t\t\t\t\t❗ ALERTA ❗
             \nAUMENTO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}
-            \n\t\t\t\t\t\t\t\t\t\t\t  @everyone\n\n**""",view=view,delete_after=10000)
+            \n\t\t\t\t\t\t\t\t\t\t\t  @everyone\n\n**""",view=view,delete_after=800)
         elif AlertnumIncendios[server_id]<AlertLastRead[server_id]: # numero de incêndios desceu em relação ao último check
-            await AlertChannel[server_id].send(f"**\n\t\t\t\t\t\t\t❕ NOVO DESENVOLVIMENTO ❕**",delete_after=10000)
+            await AlertChannel[server_id].send(f"**\n\t\t\t\t\t\t\t❕ NOVO DESENVOLVIMENTO ❕**",delete_after=800)
             if AlertnumIncendios[server_id]==0:
-                await AlertChannel[server_id].send(f"**\n\nJÁ NÃO EXISTE NENHUM INCÊNDIO OFICIALMENTE ATIVO EM {AlertConcelho[server_id].upper()}**",delete_after=10000)
+                await AlertChannel[server_id].send(f"**\n\nJÁ NÃO EXISTE NENHUM INCÊNDIO OFICIALMENTE ATIVO EM {AlertConcelho[server_id].upper()}**",delete_after=800)
             else:
-                await AlertChannel[server_id].send(f"**\n\nDIMINUIÇÃO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}**",view=view,delete_after=10000)
-            await AlertChannel[server_id].send("*\n\nNESTE ALERTA APENAS SÃO CONSIDERADOS ATIVOS OS INCÊNDIOS EM CURSO, PARA VER SE O INCÊNDIO AINDA ESTÁ EM RESOLUÇÃO/CONCLUSÃO/VIGILÂNCIA USE UM DOS BOTÕES ABAIXO\n\n*",delete_after=10000)
+                await AlertChannel[server_id].send(f"**\n\nDIMINUIÇÃO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}**",view=view,delete_after=800)
+            await AlertChannel[server_id].send("_\n\nNeste alerta apenas são considerados ativos os incêndios em curso. \nPara ver se o incêndio ainda está em resolução, conclusão ou vigilância use um dos botões abaixo.\n\n_",delete_after=800)
         else:
             print("\n\nMODO ALERTA: NÃO HOUVE ATUALIZAÇÕES.")
         view.remove_item(InfoButton)
