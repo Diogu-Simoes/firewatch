@@ -204,7 +204,7 @@ async def alerta(interaction):                 # comanndo /alerta
     await asyncio.sleep(298)
     await msg.delete() #o defer obriga a enviar uma mensagem de followup mas esta é logo apagada
 
-@client.tree.command(description="Mostra todos os incêndios ativos a nível nacional e permite pesquisar por incêndios!")
+@client.tree.command(description="Mostra todos os incêndios a nível nacional e permite pesquisar por região!")
 async def incendios(interaction):
     await interaction.response.defer()
     msg=await interaction.followup.send("**\n\t\t\t\t\t\t\t\t\t\t\t\t\t**:fire:")
@@ -247,19 +247,19 @@ async def incendios(interaction):
             if dados['data'] != []: #formata os dados e mostra os casa haja >1 incendio nesse concelho, senao mostra a mensagem
                 DataMsg[interaction.guild.id]=await interaction.channel.send(await formatedData(dados,selecao_concelho.values[0]),delete_after=300) #
             else:
-                await interaction.channel.send(f"**\nNão existem incêndios ativos em {selecao_concelho.values[0]}.**",delete_after=2)
+                await interaction.channel.send(f"**\nNão existem incêndios em {selecao_concelho.values[0]}.**",delete_after=2)
         selecao_concelho.callback = resposta_concelho
 
     selecao_distrito.callback = resposta_distrito
     dados=(requests.get(URL,)).json()     #busca o numero de incêndios em portugal e mostra-os
     if dados['data'] == []:
-        await interaction.channel.    send("**\nNão existem incêndios ativos em Portugal neste momento.**",delete_after=300)
+        await interaction.channel.    send("**\nNão existem incêndios em Portugal neste momento.**",delete_after=300)
     else:
         numIncendios=len(dados['data']) #caso haja pelos menos 1 incêndio, mostra o dropdown dos distritos para procurar por incêndios
         if numIncendios>1:
-            await interaction.channel.send(f"**\nExistem {numIncendios} incêndios ativos em Portugal.**",delete_after=300)
+            await interaction.channel.send(f"**\nExistem {numIncendios} incêndios em Portugal.**",delete_after=300)
         else:
-            await interaction.channel.send("**\nExiste um incêndio ativo em Portugal.**",delete_after=300)
+            await interaction.channel.send("**\nExiste um incêndio em Portugal.**",delete_after=300)
         view.add_item(selecao_distrito)
         await interaction.channel.send("**\nEscolhe um distrito para procurar por incêndios:**",view = view,delete_after=300)
     await asyncio.sleep(300)
@@ -320,19 +320,19 @@ async def vigilancia(server_id): #loop do alerta
                 if dados['data'] != []:
                     DataMsg[interaction.guild.id]=await interaction.channel.send(await formatedData(dados,selecao_concelho.values[0]),delete_after=300) #
                 else:
-                    await interaction.channel.send(f"**\nNão existem incêndios ativos em {selecao_concelho.values[0]}.**",delete_after=2)
+                    await interaction.channel.send(f"**\nNão existem incêndios em {selecao_concelho.values[0]}.**",delete_after=2)
             selecao_concelho.callback = resposta_concelho
 
         selecao_distrito.callback = resposta_distrito
         dados=(requests.get(URL,)).json()
         if dados['data'] == []:
-            await interaction.channel.send("**\nNão existem incêndios ativos em Portugal neste momento.**",delete_after=300)
+            await interaction.channel.send("**\nNão existem incêndios em Portugal neste momento.**",delete_after=300)
         else:
             numIncendios=len(dados['data'])
             if numIncendios>1:
-                await interaction.channel.send(f"**\nExistem {numIncendios} incêndios ativos em Portugal.**",delete_after=300)
+                await interaction.channel.send(f"**\nExistem {numIncendios} incêndios em Portugal.**",delete_after=300)
             else:
-                await interaction.channel.send("**\nExiste um incêndio ativo em Portugal.**",delete_after=300)
+                await interaction.channel.send("**\nExiste um incêndio em Portugal.**",delete_after=300)
             view.add_item(selecao_distrito)
             await interaction.channel.send("**\nEscolhe um distrito para procurar por incêndios:**",view = view,delete_after=300)
     InfoButton.callback=resposta_info
@@ -341,25 +341,26 @@ async def vigilancia(server_id): #loop do alerta
     view.add_item(WebsiteButton)
     global AlertLastRead
     global AlertnumIncendios
-    dados=(requests.get(URL,{"concelho":AlertConcelho[server_id]})).json()
+    dados=(requests.get(URL,{"concelho":AlertConcelho[server_id],"status":["Em curso","Despacho de 1º Alerta","Despacho","Início"]})).json()
     AlertnumIncendios[server_id]=len(dados['data'])
     try:
         if AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertnumIncendios[server_id]==1:
             await AlertChannel[server_id].send(f"""**\n\t\t\t\t\t\t\t\t\t\t\t❗ ALERTA ❗
             \n\t\t\t\t\tSURGIU UM INCÊNDIO EM {AlertConcelho[server_id].upper()}!
-            \n\t\t\t\t\t\t\t\t\t\t\t  @everyone\n\n**""",view=view,delete_after=3600)
+            \n\t\t\t\t\t\t\t\t\t\t\t  @everyone\n\n**""",view=view,delete_after=10000)
         if AlertnumIncendios[server_id]>AlertLastRead[server_id]:     # numero de incêndios subiu em relação ao último check
             await AlertChannel[server_id].send(f"""**\n\t\t\t\t\t\t\t\t\t\t\t❗ ALERTA ❗
-            \nAUMENTO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}
-            \n\t\t\t\t\t\t\t\t\t\t\t  @everyone\n\n**""",view=view,delete_after=3600)
+            \nAUMENTO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}
+            \n\t\t\t\t\t\t\t\t\t\t\t  @everyone\n\n**""",view=view,delete_after=10000)
         elif AlertnumIncendios[server_id]<AlertLastRead[server_id]: # numero de incêndios desceu em relação ao último check
-            await AlertChannel[server_id].send(f"**\n\t\t\t\t\t\t\t❕ NOVO DESENVOLVIMENTO ❕**",delete_after=3600)
+            await AlertChannel[server_id].send(f"**\n\t\t\t\t\t\t\t❕ NOVO DESENVOLVIMENTO ❕**",delete_after=10000)
             if AlertnumIncendios[server_id]==0:
-                await AlertChannel[server_id].send(f"**\n\nJÁ NÃO EXISTE NENHUM INCÊNDIO OFICIALMENTE ATIVO!**",delete_after=3600)
+                await AlertChannel[server_id].send(f"**\n\nJÁ NÃO EXISTE NENHUM INCÊNDIO OFICIALMENTE ATIVO EM {AlertConcelho[server_id].upper()}**",delete_after=10000)
             else:
-                await AlertChannel[server_id].send(f"**\n\nDIMINUIÇÃO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}\n\n**",view=view,delete_after=3600)
+                await AlertChannel[server_id].send(f"**\n\nDIMINUIÇÃO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}**",view=view,delete_after=10000)
+            await AlertChannel[server_id].send("*\n\nNESTE ALERTA APENAS SÃO CONSIDERADOS ATIVOS OS INCÊNDIOS EM CURSO, PARA VER SE O INCÊNDIO AINDA ESTÁ EM RESOLUÇÃO/CONCLUSÃO/VIGILÂNCIA USE UM DOS BOTÕES ABAIXO\n\n*",delete_after=10000)
         else:
-            print("\n\nMODO ALERTA: NÃO HOUVE DESENVOLVIMENTOS.")
+            print("\n\nMODO ALERTA: NÃO HOUVE ATUALIZAÇÕES.")
         view.remove_item(InfoButton)
         view.remove_item(WebsiteButton)
     except:
@@ -373,7 +374,7 @@ async def formatedData(dados,local): #recebe os dados da API e formata-os o /inc
     for i in range (numIncendios):
         if(numIncendios>1):
             if i==0:
-                final+=f"**\nExistem agora {numIncendios} incêndios ativos na zona do concelho de {local}:\n**" #caso haja mais que um
+                final+=f"**\nExistem {numIncendios} incêndios no concelho de {local}:\n**" #caso haja mais que um
                 final+=f"\n\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:one:" #mostra a emoji corresponde ao número incêndio
             elif i==1:
                 final+=f"\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:two:"
@@ -394,7 +395,7 @@ async def formatedData(dados,local): #recebe os dados da API e formata-os o /inc
             else:
                 final+=f"\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t{i}"
         else: #se apaenas existir um incêndio não mostra emoji e a mensage muda
-            final+=f"**\nExiste agora um incêndio ativo na zona do concelho de {local}:**" #dados formatados:
+            final+=f"**\nExiste um incêndio na zona no conselho de {local}:**" #dados formatados:
         final+=f"""\n\n```
 Localização: {dados['data'][i]['freguesia']}, {dados['data'][i]['localidade']}, {dados['data'][i]['detailLocation']}
 Início: {dados['data'][i]['date']} às {dados['data'][i]['hour']}h
