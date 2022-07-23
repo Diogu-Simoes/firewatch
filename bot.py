@@ -160,6 +160,8 @@ async def alerta(interaction):                 # comanndo /alerta
         async def resposta_concelho(interaction):                   #irá eventualmente receber a resposta do dropdown do concelho
             await interaction.response.defer(thinking=False)
             global AlertConcelho
+            global AlertLastRead
+            AlertLastRead[interaction.guild.id]=0
             AlertConcelho[interaction.guild.id]=selecao_concelho.values[0]
             await interaction.channel.send(f"**\nRegião atualizada com sucesso!**",delete_after=1)
         selecao_concelho.callback = resposta_concelho
@@ -196,8 +198,9 @@ async def alerta(interaction):                 # comanndo /alerta
     async def resposta_concelho(interaction):  #esta é resposta para o botão que aparece automatico se ja estiver escolhido um concelho
             await interaction.response.defer(thinking=False) #, não confundir com a resposta anterior do botão que é chamado pela escolha do distrito
             global AlertConcelho
-            AlertConcelho[interaction.guild.id]=selecao_concelho.values[0]
+            global AlertLastRead
             AlertLastRead[interaction.guild.id]=0
+            AlertConcelho[interaction.guild.id]=selecao_concelho.values[0]
             await interaction.channel.send(f"**\nRegião atualizada com sucesso!**",delete_after=1)
 
     if interaction.guild.id in AlertDistrito.keys():    #apenas podemos iniciar esta variável se o botão for criado
