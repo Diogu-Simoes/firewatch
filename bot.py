@@ -354,11 +354,11 @@ async def vigilancia(server_id): #loop do alerta
     try:
         if AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertLastRead[server_id]==0 and AlertnumIncendios[server_id]==1:
             await AlertChannel[server_id].send(f"""**\n\t\t\t\t\t\t\t\t\t\t\t❗ ALERTA ❗
-            \n\t\t\t\t\tSURGIU UM INCÊNDIO EM {AlertConcelho[server_id].upper()}!
+            \n\t\t\t\t\tSURGIU UM INCÊNDIO EM {AlertConcelho[server_id].upper()}
             \n\t\t\t\t\t\t\t\t\t\t\t  @here\n\n**""",view=view,delete_after=800)
         elif AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertLastRead[server_id]==0 and AlertnumIncendios[server_id]>1:
             await AlertChannel[server_id].send(f"""**\n\t\t\t\t\t\t\t\t\t\t\t❗ ALERTA ❗
-            \n\t\t\t\t\tSURGIRAM {AlertnumIncendios[server_id]} INCÊNDIOS EM {AlertConcelho[server_id].upper()}!
+            \n\t\t\t\t\tSURGIRAM {AlertnumIncendios[server_id]} INCÊNDIOS EM {AlertConcelho[server_id].upper()}
             \n\t\t\t\t\t\t\t\t\t\t\t  @here\n\n**""",view=view,delete_after=800)
         elif AlertnumIncendios[server_id]>AlertLastRead[server_id]:     # numero de incêndios subiu em relação ao último check
             await AlertChannel[server_id].send(f"""**\n\t\t\t\t\t\t\t\t\t\t\t❗ ALERTA ❗
@@ -367,10 +367,10 @@ async def vigilancia(server_id): #loop do alerta
         elif AlertnumIncendios[server_id]<AlertLastRead[server_id]: # numero de incêndios desceu em relação ao último check
             await AlertChannel[server_id].send(f"**\n\t\t\t\t\t\t\t❕ NOVO DESENVOLVIMENTO ❕**",delete_after=800)
             if AlertnumIncendios[server_id]==0:
-                await AlertChannel[server_id].send(f"**\n\nJÁ NÃO EXISTE NENHUM INCÊNDIO OFICIALMENTE ATIVO EM {AlertConcelho[server_id].upper()}**",delete_after=800)
+                await AlertChannel[server_id].send(f"**\nJÁ NÃO EXISTE NENHUM INCÊNDIO OFICIALMENTE ATIVO EM {AlertConcelho[server_id].upper()}**",delete_after=800)
             else:
-                await AlertChannel[server_id].send(f"**\n\nDIMINUIÇÃO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}**",delete_after=800)
-            await AlertChannel[server_id].send("_\n\nNeste alerta apenas são considerados ativos os incêndios em curso. \nPara ver se o incêndio ainda está em resolução, conclusão ou vigilância use um dos botões abaixo.\n\n_",view=view,delete_after=800)
+                await AlertChannel[server_id].send(f"**\nDIMINUIÇÃO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}**",delete_after=800)
+            await AlertChannel[server_id].send("\n\t\t\t\t\t\t\t\t\t\t\t  @here_\n\nNeste alerta apenas são considerados ativos os incêndios em curso. \nPara ver se o incêndio ainda está em resolução, conclusão ou vigilância use um dos botões abaixo.\n_",view=view,delete_after=800)
         else:
             print("\n\nMODO ALERTA: NÃO HOUVE ATUALIZAÇÕES.")
         view.remove_item(InfoButton)
