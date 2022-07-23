@@ -256,7 +256,7 @@ async def incendios(interaction):
         selecao_concelho.callback = resposta_concelho
 
     selecao_distrito.callback = resposta_distrito
-    dados=(requests.get(URL,)).json()     #busca o numero de incêndios em portugal e mostra-os
+    dados=(requests.get(URL)).json()     #busca o numero de incêndios em portugal e mostra-os
     if dados['data'] == []:
         await interaction.channel.send("**\nNão existem incêndios em Portugal neste momento.**",delete_after=300)
     else:
@@ -329,7 +329,7 @@ async def vigilancia(server_id): #loop do alerta
             selecao_concelho.callback = resposta_concelho
 
         selecao_distrito.callback = resposta_distrito
-        dados=(requests.get(URL,)).json()
+        dados=(requests.get(URL)).json()
         if dados['data'] == []:
             await interaction.channel.send("**\nNão existem incêndios em Portugal neste momento.**",delete_after=300)
         else:
