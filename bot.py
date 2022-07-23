@@ -197,6 +197,7 @@ async def alerta(interaction):                 # comanndo /alerta
             await interaction.response.defer(thinking=False) #, não confundir com a resposta anterior do botão que é chamado pela escolha do distrito
             global AlertConcelho
             AlertConcelho[interaction.guild.id]=selecao_concelho.values[0]
+            AlertLastRead[interaction.guild.id]=0
             await interaction.channel.send(f"**\nRegião atualizada com sucesso!**",delete_after=1)
 
     if interaction.guild.id in AlertDistrito.keys():    #apenas podemos iniciar esta variável se o botão for criado
@@ -360,8 +361,8 @@ async def vigilancia(server_id): #loop do alerta
             if AlertnumIncendios[server_id]==0:
                 await AlertChannel[server_id].send(f"**\n\nJÁ NÃO EXISTE NENHUM INCÊNDIO OFICIALMENTE ATIVO EM {AlertConcelho[server_id].upper()}**",delete_after=800)
             else:
-                await AlertChannel[server_id].send(f"**\n\nDIMINUIÇÃO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}**",view=view,delete_after=800)
-            await AlertChannel[server_id].send("_\n\nNeste alerta apenas são considerados ativos os incêndios em curso. \nPara ver se o incêndio ainda está em resolução, conclusão ou vigilância use um dos botões abaixo.\n\n_",delete_after=800)
+                await AlertChannel[server_id].send(f"**\n\nDIMINUIÇÃO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}**",delete_after=800)
+            await AlertChannel[server_id].send("_\n\nNeste alerta apenas são considerados ativos os incêndios em curso. \nPara ver se o incêndio ainda está em resolução, conclusão ou vigilância use um dos botões abaixo.\n\n_",view=view,delete_after=800)
         else:
             print("\n\nMODO ALERTA: NÃO HOUVE ATUALIZAÇÕES.")
         view.remove_item(InfoButton)
