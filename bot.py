@@ -54,7 +54,7 @@ class BotaoOn(View): #Caso o comando /alerta seja chamado quando a vigiancia est
             AlertLastRead[interaction.guild.id]=0
             await asyncio.sleep(1)
             if vigilancia.is_running():
-                button.label=f"Ligado -> {AlertConcelho[interaction.guild.id]} #{AlertChannel[interaction.guild.id]}"
+                button.label=f"Ligado"
                 button.style=discord.ButtonStyle.success
             else:
                 await interaction.channel.send(f"**\nOcorreu um erro ao ativar o modo alerta!**",delete_after=2)
@@ -77,7 +77,7 @@ class BotaoOff(View): #caso esteja desativa mostra este, fazem exatamente o mesm
             AlertLastRead[interaction.guild.id]=0
             await asyncio.sleep(1)
             if vigilancia.is_running():
-                button.label=f"Ligado -> {AlertConcelho[interaction.guild.id]} #{AlertChannel[interaction.guild.id]}"
+                button.label=f"Ligado"
                 button.style=discord.ButtonStyle.success
             else:
                 await interaction.channel.send(f"**\nOcorreu um erro ao ativar o modo alerta!**",delete_after=2)
@@ -350,11 +350,11 @@ async def vigilancia(server_id): #loop do alerta
         if AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertnumIncendios[server_id]==1:
             await AlertChannel[server_id].send(f"""**\n\t\t\t\t\t\t\t\t\t\t\t❗ ALERTA ❗
             \n\t\t\t\t\tSURGIU UM INCÊNDIO EM {AlertConcelho[server_id].upper()}!
-            \n\t\t\t\t\t\t\t\t\t\t\t  @everyone\n\n**""",view=view,delete_after=800)
+            \n\t\t\t\t\t\t\t\t\t\t\t  @here\n\n**""",view=view,delete_after=800)
         elif AlertnumIncendios[server_id]>AlertLastRead[server_id]:     # numero de incêndios subiu em relação ao último check
             await AlertChannel[server_id].send(f"""**\n\t\t\t\t\t\t\t\t\t\t\t❗ ALERTA ❗
             \nAUMENTO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}
-            \n\t\t\t\t\t\t\t\t\t\t\t  @everyone\n\n**""",view=view,delete_after=800)
+            \n\t\t\t\t\t\t\t\t\t\t\t  @here\n\n**""",view=view,delete_after=800)
         elif AlertnumIncendios[server_id]<AlertLastRead[server_id]: # numero de incêndios desceu em relação ao último check
             await AlertChannel[server_id].send(f"**\n\t\t\t\t\t\t\t❕ NOVO DESENVOLVIMENTO ❕**",delete_after=800)
             if AlertnumIncendios[server_id]==0:
