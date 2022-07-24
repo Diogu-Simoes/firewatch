@@ -88,12 +88,13 @@ intents = discord.Intents.default()
 client = BOT(intents=intents)
 AlertConcelho={} #estes 4 primeiros dicionários devem ser guardados de alguma forma, para manter persistência de dados entre todos os servers do bot
 AlertChannel={}
-AlertLastRead={}
-AlertnumIncendios={}
 AlertOnOff={}
 AlertDistrito={}
-ConcelhoOpcoes=" "
-ConcelhoIncendios=" "
+AlertLastRead={}
+AlertnumIncendios={}
+ConcelhoOpcoes={}
+ConcelhoIncendios={}
+ConcelhoAlerta={}
 DataMsg={}
 
 @client.event
@@ -109,6 +110,7 @@ async def alerta(interaction):                 # comanndo /alerta
         return 1
     FollowupAlerta=await interaction.followup.send("**\n**:tools:")
     global ConcelhoOpcoes
+    ConcelhoOpcoes[interaction.guild.id]=" "
     view=BotaoOff() #botão adpativo referido no ínicio do código, adicionamos como off, se estiver em modo vigilancia será mudado à frente podemos
     text_channel_dic=[] #já adicionar à view pois é o primeiro elemento do menu, depois de o mostrarmos alteramos a variável
     for channel in interaction.guild.channels:
@@ -145,9 +147,9 @@ async def alerta(interaction):                 # comanndo /alerta
         global AlertDistrito
         AlertDistrito[interaction.guild.id]=selecao_distrito.values[0]
         global ConcelhoOpcoes
-        if ConcelhoOpcoes!=" ":
-            await ConcelhoOpcoes.delete()   #codigo para questões de estética, apaga o dropdown antigo
-            ConcelhoOpcoes=" "              # do concelho para mostrar o novo se for mudado o distrito
+        if ConcelhoOpcoes[interaction.guild.id]!=" ":
+            await ConcelhoOpcoes[interaction.guild.id].delete()   #codigo para questões de estética, apaga o dropdown antigo
+            ConcelhoOpcoes[interaction.guild.id]=" "              # do concelho para mostrar o novo se for mudado o distrito
         concelhosEscolha=[]
         for distrito,concelhos in distritosConcelhosDic.items():    #tal como nos dois anteriores, cria a lista de concelhos para escolher
             if distrito==selecao_distrito.values[0]:                # mas aqui se já houver um concelho escolhido implica que também há um distrito
@@ -155,7 +157,7 @@ async def alerta(interaction):                 # comanndo /alerta
                         concelhosEscolha.append(discord.SelectOption(label=concelho,emoji="📍")) #um caso mais abaixo para este exato propósito
         selecao_concelho=Select(options=concelhosEscolha,placeholder="Clica para selecionar o concelho!")
         view.add_item(selecao_concelho)
-        ConcelhoOpcoes= await interaction.channel.send("**\nSeleciona agora um concelho:**",view = view,delete_after=300)
+        ConcelhoOpcoes[interaction.guild.id]= await interaction.channel.send("**\nSeleciona agora um concelho:**",view = view,delete_after=300)
         view.remove_item(selecao_concelho)
 
         async def resposta_concelho(interaction):                   #irá eventualmente receber a resposta do dropdown do concelho
@@ -193,7 +195,7 @@ async def alerta(interaction):                 # comanndo /alerta
                         concelhosEscolha.append(discord.SelectOption(label=concelho,emoji="📍"))
         selecao_concelho=Select(options=concelhosEscolha,placeholder="Clica para selecionar o concelho!")
         view.add_item(selecao_concelho) #mostra o dropdown dos concelhos com o escolhido anteriormente lá como default
-        ConcelhoOpcoes= await interaction.channel.send("**\nSeleciona agora um concelho:**",view = view,delete_after=300)
+        ConcelhoOpcoes[interaction.guild.id]= await interaction.channel.send("**\nSeleciona agora um concelho:**",view = view,delete_after=300)
         view.remove_item(selecao_concelho)
 
     async def resposta_concelho(interaction):  #esta é resposta para o botão que aparece automatico se ja estiver escolhido um concelho
@@ -214,7 +216,9 @@ async def incendios(interaction):
     await interaction.response.defer()
     FollowupIncendio=await interaction.followup.send("**\n**:fire:")
     global DataMsg
-    DataMsg[interaction.guild.id]=" "                    #ligeiro código esparguete, não consegui arranjar melhor maneira de permitir
+    global ConcelhoIncendios
+    DataMsg[interaction.guild.id]=" "
+    ConcelhoIncendios[interaction.guild.id]=" "                            #ligeiro código esparguete, não consegui arranjar melhor maneira de permitir
     view=View()                                                 #chamar a funcao do comando incendios ao clicar no "procura informacoes no bot"
     distritosEscolha=[]#                                         dentro do alerta sem ser copiando a para aqui dentro como parte do /alerta
     for distrito in distritosConcelhosDic.keys():
@@ -227,9 +231,9 @@ async def incendios(interaction):
         if DataMsg[interaction.guild.id]!=" ":
             await DataMsg[interaction.guild.id].delete()
             DataMsg[interaction.guild.id]=" "
-        if ConcelhoIncendios!=" ":
-            await ConcelhoIncendios.delete()
-            ConcelhoIncendios=" "
+        if ConcelhoIncendios[interaction.guild.id]!=" ":
+            await ConcelhoIncendios[interaction.guild.id].delete()
+            ConcelhoIncendios[interaction.guild.id]=" "
         await interaction.response.defer(thinking=False)
         concelhosEscolha=[]
         for distrito,concelhos in distritosConcelhosDic.items():        #cria a lista de concelhos a partir do distrito e mostra-a
@@ -239,7 +243,7 @@ async def incendios(interaction):
         selecao_concelho=Select(options=concelhosEscolha,placeholder="Clique para selecionar o concelho!")
         view.remove_item(selecao_distrito)
         view.add_item(selecao_concelho)
-        ConcelhoIncendios=await interaction.channel.send("**\nAgora escolhe um concelho:**",view = view,delete_after=300)
+        ConcelhoIncendios[interaction.guild.id]=await interaction.channel.send("**\nAgora escolhe um concelho:**",view = view,delete_after=300)
         view.remove_item(selecao_concelho)
 
         async def resposta_concelho(interaction): #irá eventualmente buscar a resposta ao dropdown do concelho
@@ -287,7 +291,9 @@ async def vigilancia(server_id): #loop do alerta
     async def resposta_info(interaction):
         await interaction.response.defer(thinking=False)
         global DataMsg
-        DataMsg[interaction.guild.id]=" "                     #ligeiro código esparguete, não consegui arranjar melhor maneira de permitir
+        global ConcelhoAlerta
+        DataMsg[interaction.guild.id]=" "
+        ConcelhoAlerta[interaction.guild.id]=" "     #ligeiro código esparguete, não consegui arranjar melhor maneira de permitir
         view=View()                                    #chamar a funcao do comando incendios ao clicar no "procura informacoes no bot"
         distritosEscolha=[]                                  #dentro do alerta sem ser copiando a para aqui dentro como parte do /alerta
         for distrito in distritosConcelhosDic.keys():               #sendo assim, até à linha "InfoButton.callback=resposta_info"
@@ -296,14 +302,14 @@ async def vigilancia(server_id): #loop do alerta
 
         async def resposta_distrito(interaction):
             await interaction.response.defer(thinking=False)
-            global ConcelhoIncendios
+            global ConcelhoAlerta
             global DataMsg
             if DataMsg[interaction.guild.id]!=" ":
                 await DataMsg[interaction.guild.id].delete()
                 DataMsg[interaction.guild.id]=" "
-            if ConcelhoIncendios!=" ":
-                await ConcelhoIncendios.delete()
-                ConcelhoIncendios=" "
+            if ConcelhoAlerta[interaction.guild.id]!=" ":
+                await ConcelhoAlerta[interaction.guild.id].delete()
+                ConcelhoAlerta[interaction.guild.id]=" "
             concelhosEscolha=[]
             for distrito,concelhos in distritosConcelhosDic.items():
                 if distrito==selecao_distrito.values[0]:
@@ -312,7 +318,7 @@ async def vigilancia(server_id): #loop do alerta
             selecao_concelho=Select(options=concelhosEscolha,placeholder="Clique para selecionar o concelho!")
             view.remove_item(selecao_distrito)
             view.add_item(selecao_concelho)
-            ConcelhoIncendios=await interaction.channel.send("**\nAgora escolhe um concelho:**",view = view,delete_after=300)
+            ConcelhoAlerta[interaction.guild.id]=await interaction.channel.send("**\nAgora escolhe um concelho:**",view = view,delete_after=300)
             view.remove_item(selecao_concelho)
 
             async def resposta_concelho(interaction):
