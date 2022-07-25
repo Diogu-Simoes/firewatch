@@ -379,19 +379,16 @@ async def vigilancia(): #loop do alerta
                 \nPara ver se o incêndio ainda está em resolução, conclusão ou vigilância use um dos botões abaixo.\n\n_""",delete_after=838)
             else:
                 if AlertnumIncendios[server_id]==1:
-                    await AlertChannel[server_id].send(f"""**\nA VIGIAR {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()} POR INCÊNDIOS   :eyes:
-                    \nOS ALERTAS E ATUALIZAÇÕES SERÃO ENVIADOS NESTE CANAL   :inbox_tray:
-                    _É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções!_
-                    \n:exclamation: ATUALMENTE ESTÁ 1 INCÊNDIO ATIVO EM {AlertConcelho[server_id].upper()} :exclamation:**""",delete_after=839)
+                    await AlertChannel[server_id].send(f"""**\n{AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}   :eyes:
+                    \n_É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções   :inbox_tray:_
+                    \nATUALMENTE ESTÁ 1 INCÊNDIO ATIVO EM {AlertConcelho[server_id].upper()} :exclamation:**""",delete_after=839)
                 elif AlertnumIncendios[server_id]>1:
-                    await AlertChannel[server_id].send(f"""**\nA VIGIAR {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()} POR INCÊNDIOS   :eyes:
-                    \nOS ALERTAS E ATUALIZAÇÕES SERÃO ENVIADOS NESTE CANAL   :inbox_tray:
-                    _É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções!_
-                    \n:exclamation: ATUALMENTE ESTÃO {AlertnumIncendios[server_id]} INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} :exclamation:**""",delete_after=839)
+                    await AlertChannel[server_id].send(f"""**\n{AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}   :eyes:
+                    \n_É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções   :inbox_tray:_
+                    \nATUALMENTE ESTÃO {AlertnumIncendios[server_id]} INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} :exclamation:**""",delete_after=839)
                 else:
-                    await AlertChannel[server_id].send(f"""**\nA VIGIAR {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()} POR INCÊNDIOS   :eyes:
-                    \nOS ALERTAS E ATUALIZAÇÕES SERÃO ENVIADOS NESTE CANAL   :inbox_tray:
-                    _É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções!_
+                    await AlertChannel[server_id].send(f"""**\n{AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}   :eyes:
+                    \n_É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções   :inbox_tray:_
                     \nATUALMENTE NÃO HÁ INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}   :ballot_box_with_check:**""",delete_after=839)
             view.remove_item(InfoButton)
             view.remove_item(WebsiteButton)
