@@ -15,7 +15,7 @@ distritosConcelhosDic={"Aveiro": ["Águeda", "Albergaria-a-Velha", "Anadia", "Ar
 "Braga":["Amares","Barcelos","Braga","Cabeceiras de Basto","Celorico de Basto","Esposende","Fafe","Guimarães","Póvoa de Lanhoso","Terras de Bouro","Vieira do Minho","Vila Nova de Famalicão","Vila Verde","Vizela"],
 "Bragança": ["Alfândega da Fé", "Bragança", "Carrazeda de Ansiães", "Freixo de Espada à Cinta", "Macedo de Cavaleiros", "Miranda do Douro", "Mirandela", "Mogadouro", "Torre de Moncorvo", "Vila Flor", "Vimioso", "Vinhais"],
 "Castelo Branco": ["Belmonte", "Castelo Branco", "Covilhã", "Fundão", "Idanha-a-Nova", "Oleiros", "Penamacor", "Proença-a-Nova", "Sertã", "Vila de Rei", "Vila Velha de Ródão"],
-"Coimbra": ["Arganil", "Cantanhede", "Coimbra", "Condeixa-a-Nova", "Figueira da Foz", "Góis", "Lousã", "Mira", "Miranda do Corvo", "Montemor-o-Velho", "Oliveira do Hospital", "Pampilhosa da Serra"],
+"Coimbra": ["Arganil", "Cantanhede", "Coimbra", "Condeixa-a-Nova", "Figueira da Foz", "Góis", "Lousã", "Mira", "Miranda do Corvo", "Montemor-o-Velho", "Oliveira do Hospital", "Pampilhosa da Serra","Penacova"],
 "Évora": ["Alandroal", "Arraiolos", "Borba", "Estremoz", "Évora", "Montemor-o-Novo", "Mora", "Mourão", "Olivença", "Portel", "Redondo", "Reguengos de Monsaraz", "Vendas Novas", "Viana do Alentejo", "Vila Viçosa"],
 "Faro": ["Albufeira", "Alcoutim", "Aljezur", "Castro Marim", "Faro", "Lagoa", "Lagos", "Loulé", "Monchique", "Olhão", "Portimão", "São Brás de Alportel", "Silves", "Tavira", "Vila do Bispo", "Vila Real de Santo António"],
 "Guarda": ["Aguiar da Beira", "Almeida", "Celorico da Beira", "Figueira de Castelo Rodrigo", "Fornos de Algodres", "Gouveia", "Guarda", "Manteigas", "Mêda", "Pinhel", "Sabugal", "Seia", "Trancoso", "Vila Nova de Foz Côa"],
@@ -379,17 +379,17 @@ async def vigilancia(): #loop do alerta
                 \nPara ver se o incêndio ainda está em resolução, conclusão ou vigilância use um dos botões abaixo.\n\n_""",delete_after=838)
             else:
                 if AlertnumIncendios[server_id]==1:
-                    await AlertChannel[server_id].send(f"""**\n{AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}   :eyes:
-                    \n_É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções   :inbox_tray:_
-                    \nATUALMENTE ESTÁ 1 INCÊNDIO ATIVO EM {AlertConcelho[server_id].upper()} :exclamation:**""",delete_after=839)
+                    await AlertChannel[server_id].send(f"""**\n{AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   :eyes:
+                    \n*É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções*   :inbox_tray:
+                    \n**ATUALMENTE ESTÁ 1 INCÊNDIO ATIVO EM {AlertConcelho[server_id].upper()} :fire:**""",delete_after=839)
                 elif AlertnumIncendios[server_id]>1:
-                    await AlertChannel[server_id].send(f"""**\n{AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}   :eyes:
-                    \n_É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções   :inbox_tray:_
-                    \nATUALMENTE ESTÃO {AlertnumIncendios[server_id]} INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} :exclamation:**""",delete_after=839)
+                    await AlertChannel[server_id].send(f"""**\n{AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   :eyes:
+                    \n*É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções*   :inbox_tray:
+                    \n**ATUALMENTE ESTÃO {AlertnumIncendios[server_id]} INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} :fire:**""",delete_after=839)
                 else:
-                    await AlertChannel[server_id].send(f"""**\n{AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}   :eyes:
-                    \n_É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções   :inbox_tray:_
-                    \nATUALMENTE NÃO HÁ INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}   :ballot_box_with_check:**""",delete_after=839)
+                    await AlertChannel[server_id].send(f"""**\n{AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   :eyes:
+                    \n*É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções*   :inbox_tray:
+                    \n**ATUALMENTE NÃO HÁ INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}   :fire:**""",delete_after=839)
             view.remove_item(InfoButton)
             view.remove_item(WebsiteButton)
         except:
