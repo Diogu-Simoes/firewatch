@@ -7,7 +7,7 @@ When adding the bot to your discord you may notice that it requires quite a few 
 This is because there are plans to improve upon the current framework and display methods, this is of course if I ever get some help or learn more about the library.
 And on that note, below is a task list with some of the plans I would personaly love to see on the FIREWATCH bot.
 
-###Task list:
+### Task list:
 
 - [ ] Add compatibility for mobile (I have been trying and can't seem to get the app commands to work on mobile)
 - [ ] Make the fire list display more user friendly through the use of webhooks
