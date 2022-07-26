@@ -283,7 +283,7 @@ async def vigilancia(): #loop do alerta
                 return 1
         if server_id not in AlertConcelho.keys():
             return -1
-        WebsiteButton=Button(label="Usa /incendios ou clica aqui e vai para fogos.pt onde podes saber mais informações!",url="https://fogos.pt")
+        WebsiteButton=Button(label="Usa /incendios ou clica aqui e vai para fogos.pt onde tens mais informações!",url="https://fogos.pt")
         view=View()
         view.add_item(WebsiteButton)
         global AlertLastRead
