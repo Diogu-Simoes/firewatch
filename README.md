@@ -1,6 +1,6 @@
 # [Click here to add this bot to your discord!](https://discord.com/api/oauth2/authorize?client_id=999712607227359274&permissions=140123827264&scope=bot%20applications.commands)
 
-FIREWATCH is a discord bot capable of giving real time information about wildfires in Portugal, making use of an intuitive interface where the user can use dropdown menus to search the select regions for fires without ever leaving discord or needing a 3rd part app.  
+FIREWATCH is a discord bot capable of giving real time information about wildfires in Portugal, making use of an intuitive interface where the user can use dropdown menus to search the select regions for fires without ever leaving discord or needing a 3rd party app.  
 
 It is also capable of alerting (if turned on) all discord members of a server to the appearence of a wildfire in the region set by the admin of that specific server through the settings command.  
 
