@@ -283,7 +283,7 @@ async def vigilancia(): #loop do alerta
                 return 1
         if server_id not in AlertConcelho.keys():
             return -1
-        WebsiteButton=Button(label="Usa /incendios ou clica aqui e vai para fogos.pt onde tens mais informações!",url="https://fogos.pt")
+        WebsiteButton=Button(label="Usa /incendios ou clica aqui para saber mais!",url="https://fogos.pt")
         view=View()
         view.add_item(WebsiteButton)
         global AlertLastRead
@@ -296,45 +296,45 @@ async def vigilancia(): #loop do alerta
         try:
             if AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertLastRead[server_id]==0 and AlertnumIncendios[server_id]==1:
                 await AlertChannel[server_id].send(f"""**\nALERTA!
-                \nSURGIU 1 INCÊNDIO EM {AlertConcelho[server_id].upper()}   :fire:
+                \nSURGIU 1 INCÊNDIO EM {AlertConcelho[server_id].upper()}   🔥
                 \n@everyone\n\n**""",view=view,delete_after=838) # numero de incêndios subiu em relação ao último check
             elif AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertLastRead[server_id]==0 and AlertnumIncendios[server_id]>1:
                 await AlertChannel[server_id].send(f"""**\nALERTA!
-                \nSURGIRAM {AlertnumIncendios[server_id]} INCÊNDIOS EM {AlertConcelho[server_id].upper()}   :fire:
+                \nSURGIRAM {AlertnumIncendios[server_id]} INCÊNDIOS EM {AlertConcelho[server_id].upper()}   🔥
                 \n@everyone\n\n**""",view=view,delete_after=838)
             elif AlertnumIncendios[server_id]>AlertLastRead[server_id]:
                 await AlertChannel[server_id].send(f"""**\nALERTA!
-                \nAUMENTO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}   :fire:
+                \nAUMENTO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}   🔥
                 \n@everyone\n\n**""",view=view,delete_after=838)
             elif AlertnumIncendios[server_id]<AlertLastRead[server_id] and AlertnumIncendios[server_id]<=0: # numero de incêndios desceu em relação ao último check
                 await AlertChannel[server_id].send(f"""**\nNOVO DESENVOLVIMENTO!
-                \nJÁ NÃO EXISTE NENHUM INCÊNDIO OFICIALMENTE ATIVO EM {AlertConcelho[server_id].upper()}   :droplet:
+                \nJÁ NÃO EXISTE NENHUM INCÊNDIO OFICIALMENTE ATIVO EM {AlertConcelho[server_id].upper()}   💧
                 \n@everyone**
-                _\nNeste alerta apenas são considerados ativos os incêndios em curso.
-                \nPara ver se o incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n_""",view=view,delete_after=838)
+                _\nNeste alerta apenas são considerados ativos os incêndios em curso._
+                \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=838)
             elif AlertnumIncendios[server_id]<AlertLastRead[server_id]:
                 await AlertChannel[server_id].send(f"""**\nNOVO DESENVOLVIMENTO!
-                \nDIMINUIÇÃO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}   :droplet:
+                \nDIMINUIÇÃO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}   💧
                 \n@everyone**
-                _\nNeste alerta apenas são considerados ativos os incêndios em curso.
-                \nPara ver se o incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n_""",view=view,delete_after=838)
+                _\nNeste alerta apenas são considerados ativos os incêndios em curso._
+                \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=838)
             else:
                 if AlertnumIncendios[server_id]==1:
-                    await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   :eyes:
+                    await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   👀
                     \n*É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções.*
-                    \n**ATUALMENTE ESTÁ 1 INCÊNDIO ATIVO EM {AlertConcelho[server_id].upper()}**   :fire:
-                    \nNeste alerta apenas são considerados ativos os incêndios em curso.
-                    \nPara ver se o incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n_""",view=view,delete_after=839)
+                    \n**ATUALMENTE ESTÁ 1 INCÊNDIO ATIVO EM {AlertConcelho[server_id].upper()}**   🔥
+                    _\nNeste alerta apenas são considerados ativos os incêndios em curso._
+                    \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=839)
                 elif AlertnumIncendios[server_id]>1:
-                    await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   :eyes:
+                    await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   👀
                     \n*É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções*
-                    \n**ATUALMENTE ESTÃO {AlertnumIncendios[server_id]} INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}**   :fire:
-                    \nNeste alerta apenas são considerados ativos os incêndios em curso.
-                    \nPara ver se o incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n_""",view=view,delete_after=839)
+                    \n**ATUALMENTE ESTÃO {AlertnumIncendios[server_id]} INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}**   🔥
+                    _\nNeste alerta apenas são considerados ativos os incêndios em curso._
+                    \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=839)
                 else:
-                    await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   :eyes:
+                    await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   👀
                     \n*É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções*
-                    \n**ATUALMENTE NÃO HÁ INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}   :droplet:\n\n**""",view=view,delete_after=839)
+                    \n**ATUALMENTE NÃO HÁ INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}   💧\n\n**""",view=view,delete_after=839)
             view.remove_item(WebsiteButton)
         except:
             AlertOnOff[server_id]=0
