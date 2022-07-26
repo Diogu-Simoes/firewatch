@@ -90,6 +90,8 @@ DataMsg={}
 async def on_ready():
     print(f"\n\nLOGIN: {client.user} [ID: {client.user.id}]\n\n")
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"incêndios!",url="https://fogos.pt"))
+    if not vigilancia.is_running():
+        vigilancia.start()
 
 @client.tree.command(description="Permite configuar o canal do discord onde envio os alertas e o concelho a vigiar!")
 async def alerta(interaction):                 # comanndo /alerta
@@ -281,69 +283,8 @@ async def vigilancia(): #loop do alerta
                 return 1
         if server_id not in AlertConcelho.keys():
             return -1
-        InfoButton=Button(label="Procurar mais informação no bot!",style=discord.ButtonStyle.success,emoji="🔎")
-        WebsiteButton=Button(label="Saber mais em fogos.pt",url="https://fogos.pt")
-        async def resposta_info(interaction):
-            await interaction.response.defer(thinking=False)
-            global DataMsg
-            global ConcelhoIncendios
-            DataMsg[interaction.guild.id]=" "
-            ConcelhoIncendios[interaction.guild.id]=" "     #ligeiro código esparguete, não consegui arranjar melhor maneira de permitir
-            view=View()                                    #chamar a funcao do comando incendios ao clicar no "procura informacoes no bot"
-            distritosEscolha=[]                                  #dentro do alerta sem ser copiando a para aqui dentro como parte do /alerta
-            for distrito in distritosConcelhosDic.keys():               #sendo assim, até à linha "InfoButton.callback=resposta_info"
-                distritosEscolha.append(discord.SelectOption(label=distrito,emoji="🌍"))    #toda a informação pode ser consultado acima
-            selecao_distrito=Select(options=distritosEscolha,placeholder="Clique para selecionar o distrito!") # nos comentarios da mesma função
-
-            async def resposta_distrito(interaction):
-                await interaction.response.defer(thinking=False)
-                global ConcelhoIncendios
-                global DataMsg
-                if DataMsg[interaction.guild.id]!=" ":
-                    await DataMsg[interaction.guild.id].delete()
-                    DataMsg[interaction.guild.id]=" "
-                if ConcelhoIncendios[interaction.guild.id]!=" ":
-                    await ConcelhoIncendios[interaction.guild.id].delete()
-                    ConcelhoIncendios[interaction.guild.id]=" "
-                concelhosEscolha=[]
-                for distrito,concelhos in distritosConcelhosDic.items():
-                    if distrito==selecao_distrito.values[0]:
-                        for concelho in concelhos:
-                            concelhosEscolha.append(discord.SelectOption(label=concelho,emoji="📍"))
-                selecao_concelho=Select(options=concelhosEscolha,placeholder="Clique para selecionar o concelho!")
-                view.remove_item(selecao_distrito)
-                view.add_item(selecao_concelho)
-                ConcelhoIncendios[interaction.guild.id]=await interaction.channel.send("**\nAgora escolhe um concelho:**",view = view,delete_after=300)
-                view.remove_item(selecao_concelho)
-
-                async def resposta_concelho(interaction):
-                    global DataMsg
-                    if DataMsg[interaction.guild.id]!=" ":
-                        await DataMsg[interaction.guild.id].delete()
-                        DataMsg[interaction.guild.id]=" "
-                    await interaction.response.defer(thinking=False)
-                    dados=(requests.get(URL,{"concelho":selecao_concelho.values[0]})).json()
-                    if dados['data'] != []:
-                        DataMsg[interaction.guild.id]=await interaction.channel.send(await formatedData(dados,selecao_concelho.values[0]),delete_after=300) #
-                    else:
-                        await interaction.channel.send(f"**\nNão existem incêndios em {selecao_concelho.values[0]}.**",delete_after=2)
-                selecao_concelho.callback = resposta_concelho
-
-            selecao_distrito.callback = resposta_distrito
-            dados=(requests.get(URL)).json()
-            if dados['data'] == []:
-                await interaction.channel.send("**\nNão existem incêndios em Portugal neste momento.**",delete_after=300)
-            else:
-                numIncendios=len(dados['data'])
-                if numIncendios>1:
-                    await interaction.channel.send(f"**\nExistem {numIncendios} incêndios em Portugal.**",delete_after=300)
-                else:
-                    await interaction.channel.send("**\nExiste um incêndio em Portugal.**",delete_after=300)
-                view.add_item(selecao_distrito)
-                await interaction.channel.send("**\nEscolhe um distrito para procurar por incêndios:**",view = view,delete_after=300)
-        InfoButton.callback=resposta_info
+        WebsiteButton=Button(label="Podes saber mais usando /incendios ou clica e vais logo para fogos.pt!",url="https://fogos.pt")
         view=View()
-        view.add_item(InfoButton)
         view.add_item(WebsiteButton)
         global AlertLastRead
         global AlertnumIncendios
@@ -370,13 +311,13 @@ async def vigilancia(): #loop do alerta
                 \nJÁ NÃO EXISTE NENHUM INCÊNDIO OFICIALMENTE ATIVO EM {AlertConcelho[server_id].upper()}
                 \n@everyone**
                 _\nNeste alerta apenas são considerados ativos os incêndios em curso.
-                \nPara ver se o incêndio ainda está em resolução, conclusão ou vigilância use um dos botões abaixo.\n\n_""",delete_after=838)
+                \nPara ver se o incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.\n\n_""",delete_after=838)
             elif AlertnumIncendios[server_id]<AlertLastRead[server_id]:
                 await AlertChannel[server_id].send(f"""**\n❕ NOVO DESENVOLVIMENTO ❕
                 \nDIMINUIÇÃO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}
                 \n@everyone**
                 _\nNeste alerta apenas são considerados ativos os incêndios em curso.
-                \nPara ver se o incêndio ainda está em resolução, conclusão ou vigilância use um dos botões abaixo.\n\n_""",delete_after=838)
+                \nPara ver se o incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.\n\n_""",delete_after=838)
             else:
                 if AlertnumIncendios[server_id]==1:
                     await AlertChannel[server_id].send(f"""**\n{AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   :eyes:
@@ -390,7 +331,6 @@ async def vigilancia(): #loop do alerta
                     await AlertChannel[server_id].send(f"""**\n{AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   :eyes:
                     \n*É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções*   :inbox_tray:
                     \n**ATUALMENTE NÃO HÁ INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}   :fire:\n\n**""",view=view,delete_after=839)
-            view.remove_item(InfoButton)
             view.remove_item(WebsiteButton)
         except:
             AlertOnOff[server_id]=0
