@@ -93,6 +93,10 @@ async def on_ready():
     if not vigilancia.is_running():
         vigilancia.start()
 
+@client.event
+async def on_guild_join(guild):
+    print(f"\n\nFUI ADICIONADO A ESTA GUILD: {guild}")
+
 @client.tree.command(description="Permite configuar o canal do discord onde envio os alertas e o concelho a vigiar!")
 async def alerta(interaction):                 # comanndo /alerta
     await interaction.response.defer()
@@ -291,7 +295,9 @@ async def vigilancia(): #loop do alerta
         AlertnumIncendios[server_id]=0
         dados=(requests.get(URL,{"concelho":AlertConcelho[server_id]})).json()
         for incendio in dados['data']:
-            if incendio["concelho"]==AlertConcelho[server_id] and (incendio["status"]=="Despacho" or incendio["status"]=="Início" or incendio["status"]=="Em Curso" or incendio["status"]=="Despacho de 1º Alerta" or incendio["status"]=="Chegada ao TO"):
+            splitted=incendio["location"].split(",")
+            location=splitted[0]+splitted[1]
+            if (incendio["concelho"]==AlertConcelho[server_id] or location["location"]==(AlertDistrito[server_id]+", "+AlertConcelho[server_id])) and (incendio["status"]=="Despacho" or incendio["status"]=="Início" or incendio["status"]=="Em Curso" or incendio["status"]=="Despacho de 1º Alerta" or incendio["status"]=="Chegada ao TO"):
                 AlertnumIncendios[server_id]+=1
         try:
             if AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertLastRead[server_id]==0 and AlertnumIncendios[server_id]==1:
@@ -321,19 +327,19 @@ async def vigilancia(): #loop do alerta
             else:
                 if AlertnumIncendios[server_id]==1:
                     await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   👀
-                    \n*É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções.*
+                    \n*Deve definir as configurações de notificação deste canal apenas para menções pois será muito atualizado, provocando spam.*
                     \n**ATUALMENTE ESTÁ 1 INCÊNDIO ATIVO EM {AlertConcelho[server_id].upper()}**   🔥
                     _\nNeste alerta apenas são considerados ativos os incêndios em curso._
                     \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=839)
                 elif AlertnumIncendios[server_id]>1:
                     await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   👀
-                    \n*É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções*
+                    \n*Deve definir as configurações de notificação deste canal apenas para menções pois será muito atualizado, provocando spam.*
                     \n**ATUALMENTE ESTÃO {AlertnumIncendios[server_id]} INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}**   🔥
                     _\nNeste alerta apenas são considerados ativos os incêndios em curso._
                     \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=839)
                 else:
                     await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   👀
-                    \n*É recomendado que os utilizadores definam as configurações de notificação deste canal apenas para menções*
+                    \n*Deve definir as configurações de notificação deste canal apenas para menções pois será muito atualizado, provocando spam.*
                     \n**ATUALMENTE NÃO HÁ INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}   💧\n\n**""",view=view,delete_after=839)
             view.remove_item(WebsiteButton)
         except:
