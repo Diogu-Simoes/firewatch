@@ -400,14 +400,15 @@ async def vigilancia(): #loop do alerta
                 print(f"\nNão foi possível atualizar o ultimo número de incêndios da guild {server_id} na base de dados devido ao seguinte erro:\n\n{error_message}")
                 connection.rollback()
 
-@tasks.loop(seconds=1200)
+@tasks.loop(seconds=420)
 async def databaseUpdate():
-    for guild in client.guilds:
-        server_id=guild.id
-        if server_id not in AlertOnOff.keys() or server_id not in AlertChannel.keys() or server_id not in AlertDistrito.keys() or server_id not in AlertConcelho.keys():
-            pass
-        else:
-            try:
+    print("\n\nAtualizando a base de dados...")
+    try:
+        for guild in client.guilds:
+            server_id=guild.id
+            if server_id not in AlertOnOff.keys() or server_id not in AlertChannel.keys() or server_id not in AlertDistrito.keys() or server_id not in AlertConcelho.keys():
+                pass
+            else:
                 if server_id not in AlertLastRead.keys():
                     AlertLastRead[server_id]=0
                 c.execute(f"SELECT * from GUILDS WHERE ID = '{server_id}'")
@@ -421,9 +422,10 @@ async def databaseUpdate():
                     operation=f"UPDATE GUILDS SET CANAL='{AlertChannel[server_id].id}' , DISTRITO = '{AlertDistrito[server_id]}' , CONCELHO = '{AlertConcelho[server_id]}', LASTREAD = '{AlertLastRead[server_id]}', STATUS = '{AlertOnOff[server_id]}' WHERE ID = '{server_id}'"
                 c.execute(operation)
                 connection.commit()
-            except Exception as error_message:
-                print(f"\nNão foi possível atualizar os dados da guild {server_id} na base de dados devido ao seguinte erro:\n\n{error_message}")
-                connection.rollback()
+        print("\n\nBase de dados atualizada com sucesso!")
+    except Exception as error_message:
+        print(f"\nNão foi possível atualizar os dados da guild {server_id} na base de dados devido ao seguinte erro:\n\n{error_message}")
+        connection.rollback()
 
 async def formatedData(dados,local): #recebe os dados da API e formata-os o /incendios, o param local é apenas para 2 mensagens estéticas
     final=""
