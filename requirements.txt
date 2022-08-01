@@ -1,6 +1,7 @@
 requests
 asyncio
 discord
+mysqlclient
 git+https://github.com/Rapptz/discord.py
 
 

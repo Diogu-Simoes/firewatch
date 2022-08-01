@@ -5,10 +5,26 @@ from discord.ext import tasks
 import os
 import asyncio
 import requests
+import MySQLdb
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 MY_GUILD = discord.Object(id=os.getenv("DEBUG_GUILD_ID")) #variáveis hardcoded
+DBHOST=os.getenv("DBHOST")
+DBUSER=os.getenv("DBUSER")
+DBPASS=os.getenv("DBPASS")
 URL = "https://api.fogos.pt/v2/incidents/active"
+try:
+    connection=MySQLdb.connect(
+    host=DBHOST,
+    user=DBUSER,
+    password=DBPASS
+    )
+    c=connection.cursor()
+    c.execute("USE heroku_be6c648914e6427")
+except Exception as error_message:
+    print(f"\nNão foi possível ligar à base dados devido ao seguinte erro:\n\n{error_message}\n\nO bot não irá iniciar!")
+    exit()
+print("\n\nLigado à base de dados com sucesso!\n\n")
 #dicionario tipo key-distrito->value-concelhos
 distritosConcelhosDic={"Aveiro": ["Águeda", "Albergaria-a-Velha", "Anadia", "Arouca", "Aveiro", "Castelo de Paiva", "Espinho", "Estarreja", "Ílhavo", "Mealhada", "Murtosa", "Oliveira de Azeméis", "Oliveira do Bairro", "Ovar", "Santa Maria da Feira", "São João da Madeira", "Sever do Vouga", "Vagos", "Vale de Cambra"],
 "Beja": ["Aljustrel", "Almodôvar", "Alvito", "Barrancos", "Beja", "Castro Verde", "Cuba", "Ferreira do Alentejo", "Mértola", "Moura", "Odemira", "Ourique", "Serpa", "Vidigueira"],
@@ -90,12 +106,26 @@ DataMsg={}
 async def on_ready():
     print(f"\n\nLOGIN: {client.user} [ID: {client.user.id}]\n\n")
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"incêndios!",url="https://fogos.pt"))
+    try:
+        for guild in client.guilds:
+            server_id=guild.id
+            c.execute(f"SELECT * FROM GUILDS WHERE ID = '{server_id}'")
+            result=c.fetchall()
+            if result==():
+                pass
+            else:
+                for row in result:
+                    AlertChannel[server_id]= client.get_channel(int(row[1]))
+                    AlertDistrito[server_id]=row[2]
+                    AlertConcelho[server_id]=row[3]
+                    AlertLastRead[server_id]=row[4]
+                    AlertOnOff[server_id]=row[5]
+    except Exception as error_message:
+        print(f"\nNão foi possível carregar os dados da base de dados devido ao seguinte erro:\n\n{error_message}")
     if not vigilancia.is_running():
         vigilancia.start()
-
-@client.event
-async def on_guild_join(guild):
-    print(f"\n\nFUI ADICIONADO A ESTA GUILD: {guild}")
+    if not databaseUpdate.is_running():
+        databaseUpdate.start()
 
 @client.tree.command(description="Permite configuar o canal do discord onde envio os alertas e o concelho a vigiar!")
 async def alerta(interaction):                 # comanndo /alerta
@@ -106,13 +136,11 @@ async def alerta(interaction):                 # comanndo /alerta
     FollowupAlerta=await interaction.followup.send("**\n**:tools:")
     global AlertOnOff
     global ConcelhoOpcoes
-    if interaction.guild.id not in AlertOnOff.keys():
-        AlertOnOff[interaction.guild.id]=0
     ConcelhoOpcoes[interaction.guild.id]=" "
     view=BotaoOff() #botão adpativo referido no ínicio do código, adicionamos como off, se estiver em modo vigilancia será mudado à frente podemos
     text_channel_dic=[] #já adicionar à view pois é o primeiro elemento do menu, depois de o mostrarmos alteramos a variável
     for channel in interaction.guild.channels:
-        if str(channel.type) == 'text':
+        if str(channel.type) == "text":
             if interaction.guild.id in AlertChannel.keys():                 #cria a lista de canais para escolher, verifica
                 if AlertChannel[interaction.guild.id]==channel:      #se já foi escolhido antes para mostrar esse como default
                     text_channel_dic.append(discord.SelectOption(label=str(channel.position)+" - "+channel.name,emoji="#️⃣",description="id: "+str(channel.id),default=True))
@@ -169,6 +197,8 @@ async def alerta(interaction):                 # comanndo /alerta
 
     selecao_distrito.callback = resposta_distrito
     selecao_canal.callback = resposta_canal
+    if interaction.guild.id not in AlertOnOff.keys():
+        AlertOnOff[interaction.guild.id]=0
     if AlertOnOff[interaction.guild.id]==1: #botão adpativo referido no ínicio do código e definido no ínicio desta função
         view=BotaoOn()
     await interaction.channel.send("**\nClique para mudar o estado:**",view = view,delete_after=300) #mostra o botão do estado
@@ -277,75 +307,114 @@ async def vigilancia(): #loop do alerta
     for guild in client.guilds:
         server_id=guild.id
         if server_id not in AlertOnOff.keys():
-            AlertOnOff[server_id]=0
-        if AlertOnOff[server_id]!=1: #não está ligado o alerta neste guild
-            return -2
-        if server_id not in AlertChannel.keys():
-            if server_id not in AlertConcelho.keys():
-                return 0
-            else:
-                return 1
-        if server_id not in AlertConcelho.keys():
-            return -1
-        WebsiteButton=Button(label="Usa /incendios ou clica aqui para saber mais!",url="https://fogos.pt")
-        view=View()
-        view.add_item(WebsiteButton)
-        global AlertLastRead
-        global AlertnumIncendios
-        AlertnumIncendios[server_id]=0
-        dados=(requests.get(URL,{"concelho":AlertConcelho[server_id]})).json()
-        for incendio in dados['data']:
-            splitted=incendio["location"].split(",")
-            location=splitted[0]+splitted[1]
-            if (incendio["concelho"]==AlertConcelho[server_id] or location["location"]==(AlertDistrito[server_id]+", "+AlertConcelho[server_id])) and (incendio["status"]=="Despacho" or incendio["status"]=="Início" or incendio["status"]=="Em Curso" or incendio["status"]=="Despacho de 1º Alerta" or incendio["status"]=="Chegada ao TO"):
-                AlertnumIncendios[server_id]+=1
-        try:
-            if AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertLastRead[server_id]==0 and AlertnumIncendios[server_id]==1:
-                await AlertChannel[server_id].send(f"""**\nALERTA!
-                \nSURGIU 1 INCÊNDIO EM {AlertConcelho[server_id].upper()}   🔥
-                \n@everyone\n\n**""",view=view,delete_after=838) # numero de incêndios subiu em relação ao último check
-            elif AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertLastRead[server_id]==0 and AlertnumIncendios[server_id]>1:
-                await AlertChannel[server_id].send(f"""**\nALERTA!
-                \nSURGIRAM {AlertnumIncendios[server_id]} INCÊNDIOS EM {AlertConcelho[server_id].upper()}   🔥
-                \n@everyone\n\n**""",view=view,delete_after=838)
-            elif AlertnumIncendios[server_id]>AlertLastRead[server_id]:
-                await AlertChannel[server_id].send(f"""**\nALERTA!
-                \nAUMENTO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}   🔥
-                \n@everyone\n\n**""",view=view,delete_after=838)
-            elif AlertnumIncendios[server_id]<AlertLastRead[server_id] and AlertnumIncendios[server_id]<=0: # numero de incêndios desceu em relação ao último check
-                await AlertChannel[server_id].send(f"""**\nNOVO DESENVOLVIMENTO!
-                \nJÁ NÃO EXISTE NENHUM INCÊNDIO OFICIALMENTE ATIVO EM {AlertConcelho[server_id].upper()}   💧
-                \n@everyone**
-                _\nNeste alerta apenas são considerados ativos os incêndios em curso._
-                \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=838)
-            elif AlertnumIncendios[server_id]<AlertLastRead[server_id]:
-                await AlertChannel[server_id].send(f"""**\nNOVO DESENVOLVIMENTO!
-                \nDIMINUIÇÃO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}   💧
-                \n@everyone**
-                _\nNeste alerta apenas são considerados ativos os incêndios em curso._
-                \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=838)
-            else:
-                if AlertnumIncendios[server_id]==1:
-                    await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   👀
-                    \n*Deve definir as configurações de notificação deste canal apenas para menções pois será muito atualizado, provocando spam.*
-                    \n**ATUALMENTE ESTÁ 1 INCÊNDIO ATIVO EM {AlertConcelho[server_id].upper()}**   🔥
+            pass
+        elif AlertOnOff[server_id]!=1: #não está ligado o alerta neste guild
+            pass
+        elif server_id not in AlertChannel.keys():
+            pass    #mtalvez mostrar um alerta aos servidores aqui
+        elif server_id not in AlertDistrito.keys():
+            pass
+        elif server_id not in AlertConcelho.keys():
+            pass
+        else:
+            WebsiteButton=Button(label="Usa /incendios ou clica aqui para saber mais!",url="https://fogos.pt")
+            view=View()
+            view.add_item(WebsiteButton)
+            global AlertLastRead
+            global AlertnumIncendios
+            AlertnumIncendios[server_id]=0
+            dados=(requests.get(URL,{"concelho":AlertConcelho[server_id]})).json()
+            for incendio in dados['data']:
+                splitted=incendio["location"].split(",")
+                location=splitted[0]+splitted[1]
+                if (incendio["concelho"]==AlertConcelho[server_id] or location["location"]==(AlertDistrito[server_id]+", "+AlertConcelho[server_id])) and (incendio["status"]=="Despacho" or incendio["status"]=="Início" or incendio["status"]=="Em Curso" or incendio["status"]=="Despacho de 1º Alerta" or incendio["status"]=="Chegada ao TO"):
+                    AlertnumIncendios[server_id]+=1
+            try:
+                try:
+                    last_message = await AlertChannel[server_id].fetch_message(AlertChannel[server_id].last_message_id)
+                    if last_message.author.id==client.user.id:
+                        await last_message.delete()
+                except Exception as error_message:
+                    print(f"\n\nErro ao apagar ultima mensagem de vigilância na guild {server_id}, é possível que o canal esteja vazio ou o bot não vê a mensagem:\n\n{error_message}")
+                if AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertLastRead[server_id]==0 and AlertnumIncendios[server_id]==1:
+                    await AlertChannel[server_id].send(f"""**\nALERTA!
+                    \nSURGIU 1 INCÊNDIO EM {AlertConcelho[server_id].upper()}   🔥
+                    \n@everyone\n\n**""",view=view,delete_after=838) # numero de incêndios subiu em relação ao último check
+                elif AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertLastRead[server_id]==0 and AlertnumIncendios[server_id]>1:
+                    await AlertChannel[server_id].send(f"""**\nALERTA!
+                    \nSURGIRAM {AlertnumIncendios[server_id]} INCÊNDIOS EM {AlertConcelho[server_id].upper()}   🔥
+                    \n@everyone\n\n**""",view=view,delete_after=838)
+                elif AlertnumIncendios[server_id]>AlertLastRead[server_id]:
+                    await AlertChannel[server_id].send(f"""**\nALERTA!
+                    \nAUMENTO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}   🔥
+                    \n@everyone\n\n**""",view=view,delete_after=838)
+                elif AlertnumIncendios[server_id]<AlertLastRead[server_id] and AlertnumIncendios[server_id]<=0: # numero de incêndios desceu em relação ao último check
+                    await AlertChannel[server_id].send(f"""**\nNOVO DESENVOLVIMENTO!
+                    \nJÁ NÃO EXISTE NENHUM INCÊNDIO OFICIALMENTE ATIVO EM {AlertConcelho[server_id].upper()}   💧
+                    \n@everyone**
                     _\nNeste alerta apenas são considerados ativos os incêndios em curso._
-                    \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=839)
-                elif AlertnumIncendios[server_id]>1:
-                    await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   👀
-                    \n*Deve definir as configurações de notificação deste canal apenas para menções pois será muito atualizado, provocando spam.*
-                    \n**ATUALMENTE ESTÃO {AlertnumIncendios[server_id]} INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}**   🔥
+                    \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=838)
+                elif AlertnumIncendios[server_id]<AlertLastRead[server_id]:
+                    await AlertChannel[server_id].send(f"""**\nNOVO DESENVOLVIMENTO!
+                    \nDIMINUIÇÃO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}   💧
+                    \n@everyone**
                     _\nNeste alerta apenas são considerados ativos os incêndios em curso._
-                    \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=839)
+                    \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=838)
                 else:
-                    await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   👀
-                    \n*Deve definir as configurações de notificação deste canal apenas para menções pois será muito atualizado, provocando spam.*
-                    \n**ATUALMENTE NÃO HÁ INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}   💧\n\n**""",view=view,delete_after=839)
-            view.remove_item(WebsiteButton)
-        except:
-            AlertOnOff[server_id]=0
-            return 2
-        AlertLastRead[server_id]=AlertnumIncendios[server_id]
+                    if AlertnumIncendios[server_id]==1:
+                        await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   👀
+                        \n*Deve definir as configurações de notificação deste canal apenas para menções pois será muito atualizado, provocando spam.*
+                        \n**ATUALMENTE ESTÁ 1 INCÊNDIO ATIVO EM {AlertConcelho[server_id].upper()}**   🔥
+                        _\nNeste alerta apenas são considerados ativos os incêndios em curso._
+                        \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=839)
+                    elif AlertnumIncendios[server_id]>1:
+                        await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   👀
+                        \n*Deve definir as configurações de notificação deste canal apenas para menções pois será muito atualizado, provocando spam.*
+                        \n**ATUALMENTE ESTÃO {AlertnumIncendios[server_id]} INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}**   🔥
+                        _\nNeste alerta apenas são considerados ativos os incêndios em curso._
+                        \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=839)
+                    else:
+                        await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   👀
+                        \n*Deve definir as configurações de notificação deste canal apenas para menções pois será muito atualizado, provocando spam.*
+                        \n**ATUALMENTE NÃO HÁ INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}   💧\n\n**""",view=view,delete_after=839)
+                view.remove_item(WebsiteButton)
+            except Exception as error_message:
+                AlertOnOff[server_id]=0
+                print(f"\n\nErro durante a vigilância na guild {server_id}, se for sobre o canal não existir isto é esperado se o mesmo foi apagado e não se alterou no alerta:\n\n{error_message}")
+            AlertLastRead[server_id]=AlertnumIncendios[server_id]
+            try:
+                c.execute(f"SELECT * from GUILDS WHERE ID = '{server_id}'")
+                result=c.fetchall()
+                if result!=():
+                    operation=f"UPDATE GUILDS SET LASTREAD = '{AlertLastRead[server_id]}' WHERE ID = '{server_id}'"
+                    c.execute(operation)
+            except Exception as error_message:
+                print(f"\nNão foi possível atualizar o ultimo número de incêndios da guild {server_id} na base de dados devido ao seguinte erro:\n\n{error_message}")
+
+@tasks.loop(seconds=1200)
+async def databaseUpdate():
+    for guild in client.guilds:
+        server_id=guild.id
+        if server_id not in AlertOnOff.keys() or server_id not in AlertChannel.keys() or server_id not in AlertDistrito.keys() or server_id not in AlertConcelho.keys():
+            pass
+        else:
+            try:
+                if server_id not in AlertLastRead.keys():
+                    AlertLastRead[server_id]=0
+                c.execute(f"SELECT * from GUILDS WHERE ID = '{server_id}'")
+                result=c.fetchall()
+                if result==():
+                    operation = f"INSERT INTO GUILDS(\
+                    ID, CANAL, DISTRITO, CONCELHO, LASTREAD, STATUS) \
+                    VALUES ('{server_id}', '{AlertChannel[server_id].id}', '{AlertDistrito[server_id]}', '{AlertConcelho[server_id]}', '{AlertLastRead[server_id]}', '{AlertOnOff[server_id]}' \
+                    )"
+                else:
+                    operation=f"UPDATE GUILDS SET CANAL='{AlertChannel[server_id].id}' , DISTRITO = '{AlertDistrito[server_id]}' , CONCELHO = '{AlertConcelho[server_id]}', LASTREAD = '{AlertLastRead[server_id]}', STATUS = '{AlertOnOff[server_id]}' WHERE ID = '{server_id}'"
+                c.execute(operation)
+                connection.commit()
+            except Exception as error_message:
+                print(f"\nNão foi possível atualizar os dados da guild {server_id} na base de dados devido ao seguinte erro:\n\n{error_message}")
+                connection.rollback()
 
 async def formatedData(dados,local): #recebe os dados da API e formata-os o /incendios, o param local é apenas para 2 mensagens estéticas
     final=""
