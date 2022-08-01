@@ -1,7 +1,7 @@
 # [Click here to add this bot to your discord!](https://discord.com/api/oauth2/authorize?client_id=999712607227359274&permissions=140123827264&scope=bot%20applications.commands)
-## It's recommended that you create a channel specifically for this bot and that you also make sure your server has notifications for mentions only by default. 
-## Otherwise you should tell your users to manually set them for themselves in the channel or they will get spammed with the alert update. 
-### Info:
+
+### It's recommended that you create a channel specifically for this bot and that you also make sure your server has notifications for mentions only by default, otherwise you should tell your users to manually set them for themselves in the channel or they will get spammed with the alert update. 
+## INFO:
 
 FIREWATCH is an open-source discord bot capable of giving real time information about wildfires in Portugal, making use of an intuitive interface where the user can use dropdown menus to search the select regions for fires without ever leaving discord or needing a 3rd party app.
 
@@ -11,7 +11,7 @@ The fact that it allows for channel select on where to send the alerts allows ad
 
 All the bot commands are slash commands so you can type a '/' and see all avaliable commands in a very user-friendly and instant way. The commands also come with descriptions for even better understanding of their functions and capabilities.
 
-## Extra Info:
+## EXTRA INFO:
 
 I came up with the idea for FIREWATCH due to the increasingly amount of wildifres in Portugal over the last couple of years, especially during summers. Since 2017 most of our country's damage from natural disasters has been solely from wildfires, either set by acident or intentionally.
 
@@ -21,7 +21,7 @@ When adding the bot to your discord you may notice that it requires more permiss
 
 And on that note, below is a task list with some of the plans I would personaly love to see on the FIREWATCH bot.
 
-### Task List:
+### TASK LIST:
 
 - [ ] Add compatibility for mobile (I have been trying and can't seem to get the app commands to work on mobile)
 - [x] Add data persitence (Channel/Region/On/Off) troughout bot shortages, reboots or updates using a database
