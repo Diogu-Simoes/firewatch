@@ -12,6 +12,7 @@ MY_GUILD = discord.Object(id=os.getenv("DEBUG_GUILD_ID")) #variáveis hardcoded
 DBHOST=os.getenv("DBHOST")
 DBUSER=os.getenv("DBUSER")
 DBPASS=os.getenv("DBPASS")
+DBUSER=os.getenv("DBUSE")
 URL = "https://api.fogos.pt/v2/incidents/active"
 try:
     connection=MySQLdb.connect(
@@ -20,7 +21,7 @@ try:
     password=DBPASS
     )
     c=connection.cursor()
-    c.execute("USE heroku_be6c648914e6427")
+    c.execute("USE {DBUSE}")
 except Exception as error_message:
     print(f"\nNão foi possível ligar à base dados devido ao seguinte erro:\n\n{error_message}\n\nO bot não irá iniciar!")
     exit()
@@ -118,8 +119,8 @@ async def on_ready():
                     AlertChannel[server_id]= client.get_channel(int(row[1]))
                     AlertDistrito[server_id]=row[2]
                     AlertConcelho[server_id]=row[3]
-                    AlertLastRead[server_id]=row[4]
-                    AlertOnOff[server_id]=row[5]
+                    AlertLastRead[server_id]=int(row[4])
+                    AlertOnOff[server_id]=int(row[5])
     except Exception as error_message:
         print(f"\nNão foi possível carregar os dados da base de dados devido ao seguinte erro:\n\n{error_message}")
     if not vigilancia.is_running():
@@ -129,11 +130,11 @@ async def on_ready():
 
 @client.tree.command(description="Permite configuar o canal do discord onde envio os alertas e o concelho a vigiar!")
 async def alerta(interaction):                 # comanndo /alerta
-    await interaction.response.defer()
     if not interaction.user.guild_permissions.administrator:
-        await interaction.followup.send("\n**Não te foi atruibuido nenhum cargo com permissão de administrador por isso não podes mudar as configurações do bot!**",ephemeral=True)
+        await interaction.response.send_message("\n**Não te foi atruibuido nenhum cargo com permissão de administrador por isso não podes mudar as configurações do bot!**",ephemeral=True)
         return 1
-    FollowupAlerta=await interaction.followup.send("**\n**:tools:")
+    await interaction.response.defer()
+    FollowupAlerta=await interaction.followup.send("**\nALERTA**   :rotating_light:")
     global AlertOnOff
     global ConcelhoOpcoes
     ConcelhoOpcoes[interaction.guild.id]=" "
@@ -237,12 +238,15 @@ async def alerta(interaction):                 # comanndo /alerta
     if interaction.guild.id in AlertDistrito.keys():    #apenas podemos iniciar esta variável se o botão for criado
         selecao_concelho.callback = resposta_concelho   # ou seja, se já tiver sido escolhido um concelho antes
     await asyncio.sleep(298)
-    await FollowupAlerta.delete()
+    try:
+        await FollowupAlerta.delete()
+    except Exception as error_message:
+                print(f"\nNão foi possível apagar a mensagem com o nome do menu, se isto não aconteceu por ela já ter sido apagada manualmente então veja este erro::\n\n{error_message}")
 
 @client.tree.command(description="Mostra todos os incêndios a nível nacional e permite pesquisar por região!")
 async def incendios(interaction):
     await interaction.response.defer()
-    FollowupIncendio=await interaction.followup.send("**\n**:fire:")
+    FollowupIncendio=await interaction.followup.send("**\nINCÊNDIOS   **:fire:")
     global DataMsg
     global ConcelhoIncendios
     DataMsg[interaction.guild.id]=" "
@@ -300,7 +304,10 @@ async def incendios(interaction):
         view.add_item(selecao_distrito)
         await interaction.channel.send("**\nEscolhe um distrito para procurar por incêndios:**",view = view,delete_after=300)
     await asyncio.sleep(298)
-    await FollowupIncendio.delete()
+    try:
+        await FollowupIncendio.delete()
+    except Exception as error_message:
+                print(f"\nNão foi possível apagar a mensagem com o nome do menu, se isto não aconteceu por ela já ter sido apagada manualmente então veja este erro:\n\n{error_message}")
 
 @tasks.loop(seconds=840)
 async def vigilancia(): #loop do alerta
@@ -388,8 +395,10 @@ async def vigilancia(): #loop do alerta
                 if result!=():
                     operation=f"UPDATE GUILDS SET LASTREAD = '{AlertLastRead[server_id]}' WHERE ID = '{server_id}'"
                     c.execute(operation)
+                connection.commit()
             except Exception as error_message:
                 print(f"\nNão foi possível atualizar o ultimo número de incêndios da guild {server_id} na base de dados devido ao seguinte erro:\n\n{error_message}")
+                connection.rollback()
 
 @tasks.loop(seconds=1200)
 async def databaseUpdate():
