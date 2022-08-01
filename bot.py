@@ -12,7 +12,7 @@ MY_GUILD = discord.Object(id=os.getenv("DEBUG_GUILD_ID")) #variáveis hardcoded
 DBHOST=os.getenv("DBHOST")
 DBUSER=os.getenv("DBUSER")
 DBPASS=os.getenv("DBPASS")
-DBUSER=os.getenv("DBUSE")
+DBUSE=os.getenv("DBUSE")
 URL = "https://api.fogos.pt/v2/incidents/active"
 try:
     connection=MySQLdb.connect(
@@ -21,7 +21,7 @@ try:
     password=DBPASS
     )
     c=connection.cursor()
-    c.execute("USE {DBUSE}")
+    c.execute(f"USE {DBUSE}")
 except Exception as error_message:
     print(f"\nNão foi possível ligar à base dados devido ao seguinte erro:\n\n{error_message}\n\nO bot não irá iniciar!")
     exit()
