@@ -14,18 +14,6 @@ DBUSER=os.getenv("DBUSER")
 DBPASS=os.getenv("DBPASS")
 DBUSE=os.getenv("DBUSE")
 URL = "https://api.fogos.pt/v2/incidents/active"
-try:
-    connection=MySQLdb.connect(
-    host=DBHOST,
-    user=DBUSER,
-    password=DBPASS
-    )
-    c=connection.cursor()
-    c.execute(f"USE {DBUSE}")
-except Exception as error_message:
-    print(f"\nNão foi possível ligar à base dados devido ao seguinte erro:\n\n{error_message}\n\nO bot não irá iniciar!")
-    exit()
-print("\n\nLigado à base de dados com sucesso!\n\n")
 #dicionario tipo key-distrito->value-concelhos
 distritosConcelhosDic={"Aveiro": ["Águeda", "Albergaria-a-Velha", "Anadia", "Arouca", "Aveiro", "Castelo de Paiva", "Espinho", "Estarreja", "Ílhavo", "Mealhada", "Murtosa", "Oliveira de Azeméis", "Oliveira do Bairro", "Ovar", "Santa Maria da Feira", "São João da Madeira", "Sever do Vouga", "Vagos", "Vale de Cambra"],
 "Beja": ["Aljustrel", "Almodôvar", "Alvito", "Barrancos", "Beja", "Castro Verde", "Cuba", "Ferreira do Alentejo", "Mértola", "Moura", "Odemira", "Ourique", "Serpa", "Vidigueira"],
@@ -105,8 +93,20 @@ DataMsg={}
 
 @client.event
 async def on_ready():
-    print(f"\n\nLOGIN: {client.user} [ID: {client.user.id}]\n\n")
+    print(f"\n\nLOGIN: {client.user} [ID: {client.user.id}]")
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"incêndios!",url="https://fogos.pt"))
+    print("\n\nCarregando dados para a memória local...")
+    try:
+        connection=MySQLdb.connect(
+        host=DBHOST,
+        user=DBUSER,
+        password=DBPASS
+        )
+        c=connection.cursor()
+        c.execute(f"USE {DBUSE}")
+    except Exception as error_message:
+        print(f"\nNão foi possível ligar à base dados para carregar os dados devido ao seguinte erro:\n\n{error_message}\n\nO bot não irá iniciar!")
+        exit()
     try:
         for guild in client.guilds:
             server_id=guild.id
@@ -121,8 +121,12 @@ async def on_ready():
                     AlertConcelho[server_id]=row[3]
                     AlertLastRead[server_id]=int(row[4])
                     AlertOnOff[server_id]=int(row[5])
+        connection.close()
     except Exception as error_message:
-        print(f"\nNão foi possível carregar os dados da base de dados devido ao seguinte erro:\n\n{error_message}")
+        print(f"\nNão foi possível carregar os dados da base de dados devido ao seguinte erro:\n\n{error_message}\n\nO bot não irá iniciar!")
+        connection.close()
+        exit()
+    print("\n\nDados carregados com sucesso!")
     if not vigilancia.is_running():
         vigilancia.start()
     if not databaseUpdate.is_running():
@@ -309,8 +313,9 @@ async def incendios(interaction):
     except Exception as error_message:
                 print(f"\nNão foi possível apagar a mensagem com o nome do menu, se isto não aconteceu por ela já ter sido apagada manualmente então veja este erro:\n\n{error_message}")
 
-@tasks.loop(seconds=840)
+@tasks.loop(seconds=800)
 async def vigilancia(): #loop do alerta
+    print("\n\nEnviando novo alerta para todos os servidores com o alerta ligado...")
     for guild in client.guilds:
         server_id=guild.id
         if server_id not in AlertOnOff.keys():
@@ -342,7 +347,7 @@ async def vigilancia(): #loop do alerta
                     if last_message.author.id==client.user.id:
                         await last_message.delete()
                 except Exception as error_message:
-                    print(f"\n\nErro ao apagar ultima mensagem de vigilância na guild {server_id}, é possível que o canal esteja vazio ou o bot não vê a mensagem:\n\n{error_message}")
+                    print(f"\nNão consegui apagar o último alerta que enviei na guild {server_id}, irei enviar o novo por cima desse.")
                 if AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertLastRead[server_id]==0 and AlertnumIncendios[server_id]==1:
                     await AlertChannel[server_id].send(f"""**\nALERTA!
                     \nSURGIU 1 INCÊNDIO EM {AlertConcelho[server_id].upper()}   🔥
@@ -389,20 +394,22 @@ async def vigilancia(): #loop do alerta
                 AlertOnOff[server_id]=0
                 print(f"\n\nErro durante a vigilância na guild {server_id}, se for sobre o canal não existir isto é esperado se o mesmo foi apagado e não se alterou no alerta:\n\n{error_message}")
             AlertLastRead[server_id]=AlertnumIncendios[server_id]
-            try:
-                c.execute(f"SELECT * from GUILDS WHERE ID = '{server_id}'")
-                result=c.fetchall()
-                if result!=():
-                    operation=f"UPDATE GUILDS SET LASTREAD = '{AlertLastRead[server_id]}' WHERE ID = '{server_id}'"
-                    c.execute(operation)
-                connection.commit()
-            except Exception as error_message:
-                print(f"\nNão foi possível atualizar o ultimo número de incêndios da guild {server_id} na base de dados devido ao seguinte erro:\n\n{error_message}")
-                connection.rollback()
+    print("\n\nAlertas enviados com sucesso!")
 
-@tasks.loop(seconds=420)
+@tasks.loop(seconds=1000)
 async def databaseUpdate():
     print("\n\nAtualizando a base de dados...")
+    try:
+        connection=MySQLdb.connect(
+        host=DBHOST,
+        user=DBUSER,
+        password=DBPASS
+        )
+        c=connection.cursor()
+        c.execute(f"USE {DBUSE}")
+    except Exception as error_message:
+        print(f"\nNão foi possível ligar à base dados para atualizar os dados devido ao seguinte erro:\n\n{error_message}\n\nAs últimas alterações não serão guardadas!")
+        return(-2)
     try:
         for guild in client.guilds:
             server_id=guild.id
@@ -423,9 +430,11 @@ async def databaseUpdate():
                 c.execute(operation)
                 connection.commit()
         print("\n\nBase de dados atualizada com sucesso!")
+        connection.close()
     except Exception as error_message:
         print(f"\nNão foi possível atualizar os dados da guild {server_id} na base de dados devido ao seguinte erro:\n\n{error_message}")
         connection.rollback()
+        connection.close()
 
 async def formatedData(dados,local): #recebe os dados da API e formata-os o /incendios, o param local é apenas para 2 mensagens estéticas
     final=""
