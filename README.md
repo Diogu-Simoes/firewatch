@@ -1,6 +1,6 @@
 # [Click here to add this bot to your discord!](https://discord.com/api/oauth2/authorize?client_id=999712607227359274&permissions=140123827264&scope=bot%20applications.commands)
 ## It's recommended that you create a channel specifically for this bot and that you also make sure your server has notifications for mentions only by default. 
-###Otherwise you should tell your users to manually set them for themselves in the channel or they will get spammed with the alert update. You can also make the channel invisible to people without a role people can opt out/in of alerts through the role.
+### Otherwise you should tell your users to manually set them for themselves in the channel or they will get spammed with the alert update. You can also make the channel invisible to people without a role people can opt out/in of alerts through the role.
 
 FIREWATCH is an open-source discord bot capable of giving real time information about wildfires in Portugal, making use of an intuitive interface where the user can use dropdown menus to search the select regions for fires without ever leaving discord or needing a 3rd party app.
 
