@@ -359,7 +359,7 @@ async def vigilancia(): #loop do alerta
             for incendio in dados['data']:
                 splitted=incendio["location"].split(",")
                 location=splitted[0]+splitted[1]
-                if (incendio["concelho"]==AlertConcelho[server_id] or location["location"]==(AlertDistrito[server_id]+", "+AlertConcelho[server_id])) and (incendio["status"]=="Despacho" or incendio["status"]=="Início" or incendio["status"]=="Em Curso" or incendio["status"]=="Despacho de 1º Alerta" or incendio["status"]=="Chegada ao TO"):
+                if (incendio["concelho"]==AlertConcelho[server_id] or location["location"]==(AlertDistrito[server_id]+", "+AlertConcelho[server_id])) and incendio["status"]!="Resolução" and incendio["status"]!="Vigilância" and incendio["status"]!="Conclusão":
                     AlertnumIncendios[server_id]+=1
             try:
                 try:
