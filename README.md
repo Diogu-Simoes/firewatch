@@ -26,7 +26,8 @@ And on that note, below is a task list with some of the plans I would personaly 
 - [ ] Add compatibility for mobile (I've been trying but can't seem to get the app commands to work on mobile)
 - [x] Add data persitence (Channel/Region/On/Off) troughout bot shortages, reboots or updates using a database
 - [ ] Make the fire list display more user friendly through the use of webhooks
-- [ ] Allow searching/alert for fires in whole district, without forcing a town
+- [ ] Allow searching/alert for fires in a whole district, without forcing a town
+- [ ] Add images to this description, to bettber represent functionality
 - [ ] Show a satelite image of the fire location when displaying it (Using LAT/LONG coordinates from the api)
 
 
