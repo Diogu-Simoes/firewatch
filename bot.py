@@ -16,7 +16,8 @@ DBHOST=os.getenv("DBHOST")
 DBUSER=os.getenv("DBUSER")
 DBPASS=os.getenv("DBPASS")
 DBUSE=os.getenv("DBUSE")
-URL = "https://api.fogos.pt/v2/incidents/active"
+MAINTENANCE=os.getenv("MAINTENANCE")
+URL="https://api.fogos.pt/v2/incidents/active"
 #dicionario tipo key-distrito->value-concelhos
 distritosConcelhosDic={"Aveiro": ["Águeda", "Albergaria-a-Velha", "Anadia", "Arouca", "Aveiro", "Castelo de Paiva", "Espinho", "Estarreja", "Ílhavo", "Mealhada", "Murtosa", "Oliveira de Azeméis", "Oliveira do Bairro", "Ovar", "Santa Maria da Feira", "São João da Madeira", "Sever do Vouga", "Vagos", "Vale de Cambra"],
 "Beja": ["Aljustrel", "Almodôvar", "Alvito", "Barrancos", "Beja", "Castro Verde", "Cuba", "Ferreira do Alentejo", "Mértola", "Moura", "Odemira", "Ourique", "Serpa", "Vidigueira"],
@@ -263,75 +264,6 @@ async def alerta(interaction):                 # comanndo /alerta
         print("\nSe este foi apagado manulamente isto é esperado.")
         print("\n-------------------------------------------------------------------------------------------------------------------------------------------------")
 
-@client.tree.command(description="Mostra todos os incêndios a nível nacional e permite pesquisar por região!")
-async def incendios(interaction):
-    await interaction.response.defer()
-    FollowupIncendio=await interaction.followup.send("**\nINCÊNDIOS   **:fire:")
-    global DataMsg
-    global ConcelhoIncendios
-    DataMsg[interaction.guild.id]=" "
-    ConcelhoIncendios[interaction.guild.id]=" "                            #ligeiro código esparguete, não consegui arranjar melhor maneira de permitir
-    view=View()                                                 #chamar a funcao do comando incendios ao clicar no "procura informacoes no bot"
-    distritosEscolha=[]#                                         dentro do alerta sem ser copiando a para aqui dentro como parte do /alerta
-    for distrito in distritosConcelhosDic.keys():
-        distritosEscolha.append(discord.SelectOption(label=distrito,emoji="🌍"))            #cria o dropdown de distritos
-    selecao_distrito=Select(options=distritosEscolha,placeholder="Clique para selecionar o distrito!")
-
-    async def resposta_distrito(interaction):    #irá eventualmente buscar a resposta ao dropdown do distrito
-        global ConcelhoIncendios
-        global DataMsg
-        if DataMsg[interaction.guild.id]!=" ":
-            await DataMsg[interaction.guild.id].delete()
-            DataMsg[interaction.guild.id]=" "
-        if ConcelhoIncendios[interaction.guild.id]!=" ":
-            await ConcelhoIncendios[interaction.guild.id].delete()
-            ConcelhoIncendios[interaction.guild.id]=" "
-        await interaction.response.defer(thinking=False)
-        concelhosEscolha=[]
-        for distrito,concelhos in distritosConcelhosDic.items():        #cria a lista de concelhos a partir do distrito e mostra-a
-            if distrito==selecao_distrito.values[0]:
-                for concelho in concelhos:
-                    concelhosEscolha.append(discord.SelectOption(label=concelho,emoji="📍"))
-        selecao_concelho=Select(options=concelhosEscolha,placeholder="Clique para selecionar o concelho!")
-        view.remove_item(selecao_distrito)
-        view.add_item(selecao_concelho)
-        ConcelhoIncendios[interaction.guild.id]=await interaction.channel.send("**\nAgora escolhe um concelho:**",view = view,delete_after=300)
-        view.remove_item(selecao_concelho)
-
-        async def resposta_concelho(interaction): #irá eventualmente buscar a resposta ao dropdown do concelho
-            global DataMsg
-            if DataMsg[interaction.guild.id]!=" ":
-                await DataMsg[interaction.guild.id].delete()
-                DataMsg[interaction.guild.id]=" "
-            await interaction.response.defer(thinking=False)
-            dados=(requests.get(URL,{"concelho":selecao_concelho.values[0]})).json() #pede à API os dados apenas do concelho selecionado
-            if dados['data'] != []: #formata os dados e mostra os casa haja >1 incendio nesse concelho, senao mostra a mensagem
-                DataMsg[interaction.guild.id]=await interaction.channel.send(await formatedData(dados,selecao_concelho.values[0]),delete_after=300) #
-            else:
-                await interaction.channel.send(f"**\nNão existem incêndios em {selecao_concelho.values[0]}.**",delete_after=2)
-        selecao_concelho.callback = resposta_concelho
-
-    selecao_distrito.callback = resposta_distrito
-    dados=(requests.get(URL)).json()     #busca o numero de incêndios em portugal e mostra-os
-    if dados['data'] == []:
-        await interaction.channel.send("**\nNão existem incêndios em Portugal neste momento.**",delete_after=300)
-    else:
-        numIncendios=len(dados['data']) #caso haja pelos menos 1 incêndio, mostra o dropdown dos distritos para procurar por incêndios
-        if numIncendios>1:
-            await interaction.channel.send(f"**\nExistem {numIncendios} incêndios em Portugal.**",delete_after=300)
-        else:
-            await interaction.channel.send("**\nExiste um incêndio em Portugal.**",delete_after=300)
-        view.add_item(selecao_distrito)
-        await interaction.channel.send("**\nEscolhe um distrito para procurar por incêndios:**",view = view,delete_after=300)
-    await asyncio.sleep(298)
-    try:
-        await FollowupIncendio.delete()
-    except Exception as error_message:
-        print(f"\nNão consegui apagar o menu de incêndios que foi chamado na guild {client.get_guild(interaction.guild.id).name} (ID: {interaction.guild.id}).")
-        print(f"\nMensagem de erro: {error_message}")
-        print("\nSe este foi apagado manulamente isto é esperado.")
-        print("\n-------------------------------------------------------------------------------------------------------------------------------------------------")
-
 @tasks.loop(seconds=800)
 async def vigilancia(): #loop do alerta
     print("\n\nEnviando novo alerta para todos os servidores com o alerta ligado...")
@@ -372,49 +304,52 @@ async def vigilancia(): #loop do alerta
                     print("\nSe alguém mandou uma mensagem no canal depois desse alerta ou foi apagado manualmente isto é esperado.")
                     print("\nIrei enviar o novo na mesma!")
                     print("\n-------------------------------------------------------------------------------------------------------------------------------------------------")
-                if AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertLastRead[server_id]==0 and AlertnumIncendios[server_id]==1:
-                    await AlertChannel[server_id].send(f"""**\nALERTA!
-                    \nSURGIU 1 INCÊNDIO EM {AlertConcelho[server_id].upper()}   🔥
-                    \n@everyone\n\n**""",view=view,delete_after=838) # numero de incêndios subiu em relação ao último check
-                elif AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertLastRead[server_id]==0 and AlertnumIncendios[server_id]>1:
-                    await AlertChannel[server_id].send(f"""**\nALERTA!
-                    \nSURGIRAM {AlertnumIncendios[server_id]} INCÊNDIOS EM {AlertConcelho[server_id].upper()}   🔥
-                    \n@everyone\n\n**""",view=view,delete_after=838)
-                elif AlertnumIncendios[server_id]>AlertLastRead[server_id]:
-                    await AlertChannel[server_id].send(f"""**\nALERTA!
-                    \nAUMENTO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}   🔥
-                    \n@everyone\n\n**""",view=view,delete_after=838)
-                elif AlertnumIncendios[server_id]<AlertLastRead[server_id] and AlertnumIncendios[server_id]<=0: # numero de incêndios desceu em relação ao último check
-                    await AlertChannel[server_id].send(f"""**\nNOVO DESENVOLVIMENTO!
-                    \nJÁ NÃO EXISTE NENHUM INCÊNDIO OFICIALMENTE ATIVO EM {AlertConcelho[server_id].upper()}   💧
-                    \n@everyone**
-                    _\nNeste alerta apenas são considerados ativos os incêndios em curso._
-                    \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=838)
-                elif AlertnumIncendios[server_id]<AlertLastRead[server_id]:
-                    await AlertChannel[server_id].send(f"""**\nNOVO DESENVOLVIMENTO!
-                    \nDIMINUIÇÃO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}   💧
-                    \n@everyone**
-                    _\nNeste alerta apenas são considerados ativos os incêndios em curso._
-                    \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=838)
+                if MAINTENANCE==1:
+                        await AlertChannel[server_id].send(f"**\nThis discord bot will be down for maintenance indefinitely while I sort out some hosting issues and a couple of features I would like to add.\n**\n**For further news and updates check in on my respository at https://github.com/Diogu-Simoes/firewatch !")
                 else:
-                    if AlertnumIncendios[server_id]==1:
-                        await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   👀
-                        \n*Deve definir as configurações de notificação deste canal apenas para menções pois será muito atualizado, provocando spam.*
-                        \n**ATUALMENTE ESTÁ 1 INCÊNDIO ATIVO EM {AlertConcelho[server_id].upper()}**   🔥
+                    if AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertLastRead[server_id]==0 and AlertnumIncendios[server_id]==1:
+                        await AlertChannel[server_id].send(f"""**\nALERTA!
+                        \nSURGIU 1 INCÊNDIO ATIVO EM {AlertConcelho[server_id].upper()}   🔥
+                        \n@everyone\n\n**""",view=view,delete_after=838) # numero de incêndios subiu em relação ao último check
+                    elif AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertLastRead[server_id]==0 and AlertnumIncendios[server_id]>1:
+                        await AlertChannel[server_id].send(f"""**\nALERTA!
+                        \nSURGIRAM {AlertnumIncendios[server_id]} INCÊNDIOS EM {AlertConcelho[server_id].upper()}   🔥
+                        \n@everyone\n\n**""",view=view,delete_after=838)
+                    elif AlertnumIncendios[server_id]>AlertLastRead[server_id]:
+                        await AlertChannel[server_id].send(f"""**\nALERTA!
+                        \nAUMENTO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}   🔥
+                        \n@everyone\n\n**""",view=view,delete_after=838)
+                    elif AlertnumIncendios[server_id]<AlertLastRead[server_id] and AlertnumIncendios[server_id]<=0: # numero de incêndios desceu em relação ao último check
+                        await AlertChannel[server_id].send(f"""**\nNOVO DESENVOLVIMENTO!
+                        \nJÁ NÃO EXISTE NENHUM INCÊNDIO OFICIALMENTE ATIVO EM {AlertConcelho[server_id].upper()}   💧
+                        \n@everyone**
                         _\nNeste alerta apenas são considerados ativos os incêndios em curso._
-                        \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=839)
-                    elif AlertnumIncendios[server_id]>1:
-                        await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   👀
-                        \n*Deve definir as configurações de notificação deste canal apenas para menções pois será muito atualizado, provocando spam.*
-                        \n**ATUALMENTE ESTÃO {AlertnumIncendios[server_id]} INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}**   🔥
+                        \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=838)
+                    elif AlertnumIncendios[server_id]<AlertLastRead[server_id]:
+                        await AlertChannel[server_id].send(f"""**\nNOVO DESENVOLVIMENTO!
+                        \nDIMINUIÇÃO DO NÚMERO DE INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()} DE {AlertLastRead[server_id]} PARA {AlertnumIncendios[server_id]}   💧
+                        \n@everyone**
                         _\nNeste alerta apenas são considerados ativos os incêndios em curso._
-                        \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=839)
+                        \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=838)
                     else:
-                        await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   👀
-                        \n*Deve definir as configurações de notificação deste canal apenas para menções pois será muito atualizado, provocando spam.*
-                        \n**ATUALMENTE NÃO HÁ INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}**   💧
-                        _\nNeste alerta apenas são considerados ativos os incêndios em curso._
-                        \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=839)
+                        if AlertnumIncendios[server_id]==1:
+                            await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   👀
+                            \n*Deve definir as configurações de notificação deste canal apenas para menções pois será muito atualizado, provocando spam.*
+                            \n**ATUALMENTE ESTÁ 1 INCÊNDIO ATIVO EM {AlertConcelho[server_id].upper()}**   🔥
+                            _\nNeste alerta apenas são considerados ativos os incêndios em curso._
+                            \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=839)
+                        elif AlertnumIncendios[server_id]>1:
+                            await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   👀
+                            \n*Deve definir as configurações de notificação deste canal apenas para menções pois será muito atualizado, provocando spam.*
+                            \n**ATUALMENTE ESTÃO {AlertnumIncendios[server_id]} INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}**   🔥
+                            _\nNeste alerta apenas são considerados ativos os incêndios em curso._
+                            \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=839)
+                        else:
+                            await AlertChannel[server_id].send(f"""**\nZONA VIGIADA: {AlertDistrito[server_id].upper()}, {AlertConcelho[server_id].upper()}**   👀
+                            \n*Deve definir as configurações de notificação deste canal apenas para menções pois será muito atualizado, provocando spam.*
+                            \n**ATUALMENTE NÃO HÁ INCÊNDIOS ATIVOS EM {AlertConcelho[server_id].upper()}**   💧
+                            _\nNeste alerta apenas são considerados ativos os incêndios em curso._
+                            \n**Para ver se algum incêndio ainda está em resolução, conclusão ou vigilância segue o botão abaixo.   :arrow_heading_down:\n\n**""",view=view,delete_after=839)
                 view.remove_item(WebsiteButton)
             except Exception as error_message:
                 AlertOnOff[server_id]=0
@@ -474,44 +409,5 @@ async def databaseUpdate():
         print("\n-------------------------------------------------------------------------------------------------------------------------------------------------")
         connection.rollback()
         connection.close()
-async def formatedData(dados,local): #recebe os dados da API e formata-os o /incendios, o param local é apenas para 2 mensagens estéticas
-    final=""
-    numIncendios=len(dados['data'])
-    for i in range (numIncendios):
-        if(numIncendios>1):
-            if i==0:
-                final+=f"**\nExistem {numIncendios} incêndios no concelho de {local}:\n**" #caso haja mais que um
-                final+=f"\n\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:one:" #mostra a emoji corresponde ao número incêndio
-            elif i==1:
-                final+=f"\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:two:"
-            elif i==2:
-                final+=f"\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:three:"
-            elif i==3:
-                final+=f"\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:four:"
-            elif i==4:
-                final+=f"\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:five:"
-            elif i==5:
-                final+=f"\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:six:"
-            elif i==6:
-                final+=f"\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:seven:"
-            elif i==7:
-                final+=f"\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:eight:"
-            elif i==8:
-                final+=f"\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:nine:"
-            else:
-                final+=f"\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t{i}"
-        else: #se apaenas existir um incêndio não mostra emoji e a mensage muda
-            final+=f"**\nExiste um incêndio na zona no concelho de {local}:**" #dados formatados:
-        final+=f"""\n\n```
-Localização: {dados['data'][i]['freguesia']}, {dados['data'][i]['localidade']}, {dados['data'][i]['detailLocation']}
-Início: {dados['data'][i]['date']} às {dados['data'][i]['hour']}h
-Estado: {dados['data'][i]['status']}
-Origem: {dados['data'][i]['natureza']}
-Fonte do alerta: {dados['data'][i]['icnf']['fontealerta']}
-Operacionais no terreno: {dados['data'][i]['man']}
-Meios terrestres: {dados['data'][i]['terrain']}
-Meios aéreos: {dados['data'][i]['aerial']}
-```**\n**"""
-    return final #devolva os dados de todos os incêndios agrupados numa string com parágrafos
 
 client.run(TOKEN)
