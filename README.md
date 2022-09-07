@@ -1,4 +1,8 @@
-# [Click here to add this bot to your Discord!](https://discord.com/api/oauth2/authorize?client_id=999712607227359274&permissions=140123827264&scope=bot%20applications.commands)
+# UPDATE: This discord bot is currently under maintenance while I sort out hosting and some other features. 
+
+## You can still add it to your server... it simply won't do anything :D
+
+# [~~Click here to add this bot to your Discord!~~](https://discord.com/api/oauth2/authorize?client_id=999712607227359274&permissions=140123827264&scope=bot%20applications.commands)
 
 ### It's recommended that you create a channel specifically for this bot and that you also make sure your server has notifications for mentions only by default, otherwise you should tell your users to manually set them for themselves in the channel or they will get spammed with the alert update. 
 ## INFO:
