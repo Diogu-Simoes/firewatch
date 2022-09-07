@@ -304,7 +304,7 @@ async def vigilancia(): #loop do alerta
                     print("\nSe alguém mandou uma mensagem no canal depois desse alerta ou foi apagado manualmente isto é esperado.")
                     print("\nIrei enviar o novo na mesma!")
                     print("\n-------------------------------------------------------------------------------------------------------------------------------------------------")
-                if MAINTENANCE==1:
+                if MAINTENANCE=="1":
                         await AlertChannel[server_id].send(f"**\nThis discord bot will be down for maintenance indefinitely while I sort out some hosting issues and a couple of features I would like to add.\n**\n**For further news and updates check in on my respository at https://github.com/Diogu-Simoes/firewatch !")
                 else:
                     if AlertnumIncendios[server_id]>AlertLastRead[server_id] and AlertLastRead[server_id]==0 and AlertnumIncendios[server_id]==1:
